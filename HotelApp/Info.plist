@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>es</string>
+	<key>CFBundleDisplayName</key>
+	<string>Hotel</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
+
+	<!-- URL base de la API.
+	     Produccion: backend desplegado en Render con HTTPS.
+	     Local (sin internet): cambiar a http://192.168.165.244:8082/api -->
+	<key>API_BASE_URL</key>
+	<string>https://hotel-pms-api-1som.onrender.com/api</string>
+
+	<!-- Raíz de las fotos del catálogo (las sirve el frontend web).
+	     En Render no hay frontend desplegado; las imágenes del seed
+	     llegan como rutas relativas y la app usa su respaldo local. -->
+	<key>WEB_BASE_URL</key>
+	<string>https://hotel-pms-api-1som.onrender.com</string>
+
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID protege el acceso a tu cuenta.</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>La cámara se usa para escanear el código QR del depósito y el de la reserva al hacer el check-in.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se accede a tus fotos para subir imágenes de habitaciones y sedes al catálogo del hotel.</string>
+
+	<!-- ================= FACEBOOK LOGIN =================
+	     Reemplaza PON_AQUI_* con los valores de tu app en
+	     developers.facebook.com > Configuracion > Basica:
+	       - FacebookAppID     = "Numero de la app"
+	       - FacebookClientToken = "Token de cliente"
+	       - CFBundleURLSchemes = "fb" + el App ID (ej. fb1234567890)
+	     Sin esto, el SDK de Facebook no arranca.
+	     ================================================== -->
+	<key>FacebookAppID</key>
+	<string>PON_AQUI_TU_APP_ID</string>
+
+	<key>FacebookClientToken</key>
+	<string>PON_AQUI_TU_CLIENT_TOKEN</string>
+
+	<key>FacebookDisplayName</key>
+	<string>Hotel PMS</string>
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fbPON_AQUI_TU_APP_ID</string>
+			</array>
+		</dict>
+	</array>
+
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+		<string>fbauth2</string>
+		<string>fbshareextension</string>
+	</array>
+
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<!-- El backend en Render usa HTTPS: ATS no necesita excepciones.
+		     Se conservan las de red local por si se prueba contra el
+		     backend del host Windows (192.168.x.x) sin internet. -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>192.168.165.244</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>192.168.210.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>

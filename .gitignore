@@ -1,0 +1,59 @@
+# ============================================================================
+# .gitignore — HotelApp iOS (repo independiente)
+# Generado con XcodeGen. Se sube: código Swift, project.yml, Info.plist,
+# Package.resolved (fija Firebase/Facebook).
+# ============================================================================
+
+# ── Xcode ───────────────────────────────────────────────────────────────────
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.xcmarkingstring
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+
+# ── XcodeGen ────────────────────────────────────────────────────────────────
+# Se regenera con: xcodegen generate
+HotelApp.xcodeproj/
+
+# ── Swift Package Manager ───────────────────────────────────────────────────
+# Package.resolved SÍ se versiona para fijar versiones de Firebase/Facebook.
+# Si prefieres que cada quien resuelva sus propias versiones, descomenta:
+# .swiftpm/
+
+# ── macOS / VMware Shared Folders ───────────────────────────────────────────
+# Basura que deja el share de HFS+ / VMware y rompe compilaciones:
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+*.tmproj
+
+# Spotlight y Papelera
+.Spotlight-V100
+.Trashes
+
+# ── Secretos (NUNCA al repositorio) ─────────────────────────────────────────
+.env
+GoogleService-Info.plist
+*service-account*.json
+*firebase-adminsdk*.json
+*.p8
+*.p12
+
+# ── Logs / temporales ───────────────────────────────────────────────────────
+*.log
+*.tmp
+*~.nib
+local.properties
