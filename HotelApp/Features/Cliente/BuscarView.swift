@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Búsqueda de disponibilidad y reserva (cliente).
 ///
@@ -48,7 +49,8 @@ struct BuscarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                encabezado
+                hero
+
                 selectorSede
                 buscador
 
@@ -57,9 +59,7 @@ struct BuscarView: View {
                 }
 
                 if catalogo.buscando {
-                    ProgressView("Buscando disponibilidad...")
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 30)
+                    esqueleto
                 } else if items.isEmpty {
                     EstadoVacio(
                         icono: "bed.double",
@@ -75,7 +75,9 @@ struct BuscarView: View {
                     Aviso(tipo: .peligro, titulo: "Error", mensaje: error)
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Reservar")
@@ -96,64 +98,110 @@ struct BuscarView: View {
 
     // MARK: - Subvistas
 
-    private var encabezado: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Encuentra tu habitación")
-                .font(.system(size: 26, weight: .bold, design: .rounded))
+    /// Cabecera de marca: la primera impresión del cliente.
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("TU PRÓXIMA ESTADÍA")
+                .font(.caption2.weight(.bold))
+                .tracking(1.8)
+                .foregroundStyle(.white.opacity(0.65))
+
+            Text("Encuentra tu\nhabitación ideal")
+                .font(.title.weight(.bold))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+
             Text("Reserva directa, sin intermediarios.")
-                .font(.system(size: 13))
-                .foregroundStyle(Tema.textoSecundario)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack {
+                LinearGradient(colors: [Tema.azulOscuro, Tema.azul],
+                               startPoint: .topLeading,
+                               endPoint: .bottomTrailing)
+
+                Circle()
+                    .fill(Tema.dorado.opacity(0.18))
+                    .frame(width: 160, height: 160)
+                    .blur(radius: 40)
+                    .offset(x: 130, y: -50)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        )
+        .shadow(color: Tema.azul.opacity(0.22), radius: 16, x: 0, y: 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Encuentra tu habitación ideal. Reserva directa, sin intermediarios.")
+    }
+
+    /// Carrusel horizontal de sedes: en vertical ocupaba media pantalla y
+    /// empujaba las habitaciones fuera de la vista.
+    private var selectorSede: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Nuestras sedes")
+                .font(.headline)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(catalogo.sedes) { sede in
+                        let activa = sede.id == sedeId
+                        Button {
+                            Task { await elegirSede(sede) }
+                        } label: {
+                            sedeChip(sede, activa: activa)
+                        }
+                        .buttonStyle(EstiloPresionable())
+                        .accessibilityLabel("\(sede.nombre)"
+                                            + (activa ? ", seleccionada" : ""))
+                    }
+                }
+                .padding(.vertical, 2)
+            }
         }
     }
 
-    private var selectorSede: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Nuestras sedes")
-                .font(.system(size: 13, weight: .semibold))
+    private func sedeChip(_ sede: Sede, activa: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                ImagenRemota(ruta: catalogo.fotoSede(sede),
+                             iconoRespaldo: "building.2",
+                             alto: 96)
+                    .frame(width: 190)
 
-            ForEach(catalogo.sedes) { sede in
-                Button {
-                    Task { await elegirSede(sede) }
-                } label: {
-                    Tarjeta(padding: 0) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            ImagenRemota(ruta: catalogo.fotoSede(sede),
-                                         iconoRespaldo: "building.2",
-                                         alto: 120)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(sede.nombre)
-                                        .font(.system(size: 15, weight: .semibold))
-                                    Spacer()
-                                    if sede.id == sedeId {
-                                        EtiquetaEstado(texto: "Seleccionada",
-                                                       color: Tema.exito,
-                                                       icono: "checkmark")
-                                    }
-                                }
-
-                                if let direccion = sede.direccion {
-                                    Label(direccion, systemImage: "mappin.and.ellipse")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Tema.textoSecundario)
-                                }
-
-                                Text("Check-in \(sede.checkInCorto) · Check-out \(sede.checkOutCorto)")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Tema.textoSecundario)
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.bottom, 14)
-                        }
-                    }
+                if activa {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.headline)
+                        .foregroundStyle(.white, Tema.exito)
+                        .padding(7)
                 }
-                .buttonStyle(.plain)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
-                        .stroke(sede.id == sedeId ? Tema.azul : .clear, lineWidth: 2))
             }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(sede.nombre)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Tema.texto)
+                    .lineLimit(1)
+
+                if let ciudad = sede.ciudad {
+                    Label(ciudad, systemImage: "mappin.and.ellipse")
+                        .font(.caption2)
+                        .foregroundStyle(Tema.textoSecundario)
+                        .lineLimit(1)
+                }
+            }
+            .padding(10)
+            .frame(width: 190, alignment: .leading)
         }
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                    style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radioPequeno, style: .continuous)
+                .stroke(activa ? Tema.azul : Tema.borde,
+                        lineWidth: activa ? 2 : 1))
+        .shadow(color: Tema.colorSombra, radius: 10, x: 0, y: 3)
     }
 
     private var buscador: some View {
@@ -161,15 +209,21 @@ struct BuscarView: View {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("Entrada").font(.system(size: 11, weight: .semibold))
+                        Label("Entrada", systemImage: "arrow.down.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Tema.textoSecundario)
                         DatePicker("", selection: $checkIn,
                                    in: FechaAPI.hoy()..., displayedComponents: .date)
                             .labelsHidden()
                             .datePickerStyle(.compact)
                     }
 
+                    Divider().frame(height: 34)
+
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("Salida").font(.system(size: 11, weight: .semibold))
+                        Label("Salida", systemImage: "arrow.up.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Tema.textoSecundario)
                         DatePicker("", selection: $checkOut,
                                    in: checkIn.addingTimeInterval(86400)...,
                                    displayedComponents: .date)
@@ -178,11 +232,22 @@ struct BuscarView: View {
                     }
                 }
 
-                HStack(spacing: 12) {
-                    Stepper("Adultos: \(adultos)", value: $adultos, in: 1...6)
-                        .font(.system(size: 12))
-                    Stepper("Niños: \(ninos)", value: $ninos, in: 0...4)
-                        .font(.system(size: 12))
+                HStack(spacing: 10) {
+                    contador("Adultos", valor: $adultos, rango: 1...6,
+                             icono: "person.fill")
+                    contador("Niños", valor: $ninos, rango: 0...4,
+                             icono: "figure.child")
+                }
+
+                if noches > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "moon.stars.fill")
+                            .font(.caption2)
+                        Text("\(noches) noche(s) · \(FechaAPI.formatear(checkIn)) → \(FechaAPI.formatear(checkOut))")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(Tema.azul)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 BotonPrincipal(titulo: "Buscar disponibilidad",
@@ -195,33 +260,127 @@ struct BuscarView: View {
         }
     }
 
+    /// Contador táctil compacto: reemplaza el `Stepper`, que ocupaba una
+    /// fila entera por campo y desalineaba las cifras.
+    private func contador(_ titulo: String, valor: Binding<Int>,
+                          rango: ClosedRange<Int>, icono: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icono)
+                .font(.caption)
+                .foregroundStyle(Tema.azul)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(titulo)
+                    .font(.caption2)
+                    .foregroundStyle(Tema.textoSecundario)
+                Text("\(valor.wrappedValue)")
+                    .font(.subheadline.weight(.bold))
+                    .contentTransition(.numericText())
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 4) {
+                Button {
+                    if valor.wrappedValue > rango.lowerBound {
+                        valor.wrappedValue -= 1
+                    }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Tema.fondo)
+                        .foregroundStyle(valor.wrappedValue > rango.lowerBound
+                                         ? Tema.azul : Tema.textoSecundario.opacity(0.4))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(valor.wrappedValue <= rango.lowerBound)
+                .accessibilityLabel("Quitar \(titulo.lowercased())")
+
+                Button {
+                    if valor.wrappedValue < rango.upperBound {
+                        valor.wrappedValue += 1
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Tema.azul.opacity(0.10))
+                        .foregroundStyle(valor.wrappedValue < rango.upperBound
+                                         ? Tema.azul : Tema.textoSecundario.opacity(0.4))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(valor.wrappedValue >= rango.upperBound)
+                .accessibilityLabel("Añadir \(titulo.lowercased())")
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .background(Tema.fondo)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                    style: .continuous))
+    }
+
     private var avisoFiltro: some View {
-        HStack {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.subheadline)
+                .foregroundStyle(Tema.exito)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("Disponibles para tus fechas")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Tema.texto)
                 Text("\(noches) noche(s) · \(FechaAPI.formatear(checkIn)) → \(FechaAPI.formatear(checkOut))")
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(Tema.textoSecundario)
             }
-            Spacer()
-            Button("Quitar filtro") {
+
+            Spacer(minLength: 0)
+
+            Button {
                 catalogo.limpiarBusqueda()
+            } label: {
+                Text("Quitar")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 32)
+                    .background(Tema.superficie)
+                    .foregroundStyle(Tema.azul)
+                    .clipShape(Capsule())
             }
-            .font(.system(size: 11, weight: .semibold))
+            .buttonStyle(.plain)
+            .accessibilityLabel("Quitar filtro de fechas")
         }
         .padding(12)
-        .background(Tema.azulClaro)
-        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno))
+        .background(Tema.azul.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                    style: .continuous))
     }
 
     private var listado: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(catalogo.resultados.isEmpty
-                 ? "Conoce nuestras habitaciones"
-                 : "\(catalogo.resultados.count) categoría(s) disponible(s)")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Tema.textoSecundario)
+            HStack {
+                Text(catalogo.resultados.isEmpty
+                     ? "Conoce nuestras habitaciones"
+                     : "Disponibles")
+                    .font(.headline)
+
+                if !catalogo.resultados.isEmpty {
+                    Text("\(catalogo.resultados.count)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Tema.exito)
+                        .clipShape(Capsule())
+                }
+
+                Spacer(minLength: 0)
+            }
 
             ForEach(items) { item in
                 categoriaCard(item)
@@ -230,67 +389,144 @@ struct BuscarView: View {
     }
 
     private func categoriaCard(_ item: Disponibilidad) -> some View {
-        Tarjeta(padding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+        let libres = catalogo.resultados.isEmpty ? nil : item.habitacionesDisponibles
+
+        return VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .bottomLeading) {
                 ImagenRemota(
                     ruta: catalogo.fotoCategoria(item.categoriaNombre, url: item.imagenUrl),
                     iconoRespaldo: iconoCategoria(item.categoriaNombre),
-                    alto: 160)
-                    .overlay(alignment: .topTrailing) {
-                        if !catalogo.resultados.isEmpty {
-                            EtiquetaEstado(
-                                texto: "\(item.habitacionesDisponibles) libre(s)",
-                                color: Tema.exito,
-                                icono: "bed.double.fill")
-                            .padding(8)
-                        }
-                    }
+                    alto: 170)
 
-                VStack(alignment: .leading, spacing: 10) {
+                LinearGradient(colors: [.clear, Color.black.opacity(0.62)],
+                               startPoint: .center,
+                               endPoint: .bottom)
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(item.categoriaNombre)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
 
-                    if let descripcion = item.descripcion, !descripcion.isEmpty {
-                        Text(descripcion)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Tema.textoSecundario)
-                            .lineLimit(2)
-                    }
-
-                    HStack(spacing: 10) {
-                        Label("\(item.capacidadAdultos) adultos", systemImage: "person.2")
-                        if item.capacidadNinos > 0 {
-                            Label("\(item.capacidadNinos) niños", systemImage: "figure.child")
-                        }
-                        Label("\(item.camas) cama(s)", systemImage: "bed.double")
-                    }
-                    .font(.system(size: 11))
-                    .foregroundStyle(Tema.textoSecundario)
-
-                    HStack {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("Desde").font(.system(size: 9)).foregroundStyle(Tema.textoSecundario)
-                            Text("\(Tema.soles(item.precioDesde)) / noche")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Tema.azul)
-                        }
-                        Spacer()
-                        Button {
-                            seleccionada = item
-                        } label: {
-                            Text("Reservar")
-                                .font(.system(size: 13, weight: .semibold))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 9)
-                                .background(Tema.azul)
-                                .foregroundStyle(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 9))
-                        }
+                    if item.capacidadNinos > 0 {
+                        Text("\(item.capacidadAdultos) adultos · \(item.capacidadNinos) niños")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                    } else {
+                        Text("\(item.capacidadAdultos) personas · \(item.camas) cama(s)")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
                     }
                 }
                 .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let libres {
+                    Text(libres > 0 ? "\(libres) libre(s)" : "Última")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(libres > 0 ? Tema.exito : Tema.alerta)
+                        .clipShape(Capsule())
+                        .padding(12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity,
+                               alignment: .topTrailing)
+                }
+            }
+            .frame(height: 170)
+            .frame(maxWidth: .infinity)
+            .clipped()
+
+            VStack(alignment: .leading, spacing: 10) {
+                if let descripcion = item.descripcion, !descripcion.isEmpty {
+                    Text(descripcion)
+                        .font(.caption)
+                        .foregroundStyle(Tema.textoSecundario)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                HStack(spacing: 14) {
+                    Label("\(item.camas) cama(s)", systemImage: "bed.double")
+                    if let metros = item.metrosCuadrados {
+                        Label("\(Int(metros)) m²", systemImage: "square.dashed")
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(Tema.textoSecundario)
+
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Desde")
+                            .font(.caption2)
+                            .foregroundStyle(Tema.textoSecundario)
+                        HStack(spacing: 2) {
+                            Text(Tema.soles(item.precioDesde))
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(Tema.azul)
+                            Text("/noche")
+                                .font(.caption2)
+                                .foregroundStyle(Tema.textoSecundario)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        seleccionada = item
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Reservar")
+                                .font(.subheadline.weight(.semibold))
+                            Image(systemName: "arrow.right")
+                                .font(.caption2.weight(.bold))
+                        }
+                        .padding(.horizontal, 18)
+                        .frame(minHeight: 44)
+                        .background(Tema.azul)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(EstiloPresionable())
+                    .accessibilityLabel("Reservar \(item.categoriaNombre)")
+                }
+            }
+            .padding(14)
+        }
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Esqueleto con la forma de la lista: evita el salto al llegar datos.
+    private var esqueleto: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<3, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: 0) {
+                    Rectangle()
+                        .fill(Tema.textoSecundario.opacity(0.12))
+                        .frame(height: 170)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Categoría de habitación").font(.headline)
+                        Text("Descripción de la habitación").font(.caption)
+                        Text("S/ 000.00").font(.title3)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(Tema.superficie)
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radio,
+                                            style: .continuous))
             }
         }
+        .redacted(reason: .placeholder)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Acciones
@@ -369,36 +605,26 @@ struct ConfirmarReservaSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    Tarjeta(padding: 0) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ImagenRemota(
-                                ruta: item.imagenUrl,
-                                iconoRespaldo: icono,
-                                alto: 140)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.categoriaNombre)
-                                    .font(.system(size: 18, weight: .semibold))
-                                Text("\(Tema.soles(item.precioDesde)) por noche")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Tema.textoSecundario)
-                            }
-                            .padding(14)
-                        }
-                    }
+                    cabecera
 
                     Tarjeta {
-                        VStack(spacing: 12) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Entrada").font(.system(size: 11, weight: .semibold))
+                        VStack(spacing: 14) {
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Label("Entrada", systemImage: "arrow.down.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Tema.textoSecundario)
                                     DatePicker("", selection: $checkIn,
                                                in: FechaAPI.hoy()..., displayedComponents: .date)
                                         .labelsHidden()
                                 }
-                                Spacer()
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Salida").font(.system(size: 11, weight: .semibold))
+
+                                Divider().frame(height: 34)
+
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Label("Salida", systemImage: "arrow.up.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Tema.textoSecundario)
                                     DatePicker("", selection: $checkOut,
                                                in: checkIn.addingTimeInterval(86400)...,
                                                displayedComponents: .date)
@@ -406,37 +632,48 @@ struct ConfirmarReservaSheet: View {
                                 }
                             }
 
-                            Stepper("Adultos: \(adultos)", value: $adultos,
-                                    in: 1...max(1, item.capacidadAdultos))
-                                .font(.system(size: 13))
-                            Stepper("Niños: \(ninos)", value: $ninos,
-                                    in: 0...max(0, item.capacidadNinos))
-                                .font(.system(size: 13))
+                            Divider()
 
-                            VStack(alignment: .leading, spacing: 5) {
+                            contador("Adultos", valor: $adultos,
+                                     rango: 1...max(1, item.capacidadAdultos),
+                                     icono: "person.fill")
+                            contador("Niños", valor: $ninos,
+                                     rango: 0...max(0, item.capacidadNinos),
+                                     icono: "figure.child")
+
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("Observaciones (opcional)")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Tema.textoSecundario)
                                 TextField("Llegada tarde, cuna, alergias...",
                                           text: $observaciones, axis: .vertical)
+                                    .font(.body)
                                     .lineLimit(2...4)
                                     .padding(10)
                                     .background(Tema.fondo)
-                                    .clipShape(RoundedRectangle(cornerRadius: 9))
+                                    .clipShape(RoundedRectangle(
+                                        cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
                             }
                         }
                     }
 
                     Tarjeta {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 10) {
                             fila("\(noches) noche(s) × \(Tema.soles(item.precioDesde))",
                                  Tema.soles(total))
                             Divider()
-                            HStack {
-                                Text("Depósito requerido (50 %)")
-                                    .font(.system(size: 13, weight: .semibold))
+                            HStack(alignment: .firstTextBaseline) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Depósito requerido")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("50 % del total")
+                                        .font(.caption2)
+                                        .foregroundStyle(Tema.textoSecundario)
+                                }
                                 Spacer()
                                 Text(Tema.soles(deposito))
-                                    .font(.system(size: 20, weight: .bold))
+                                    .font(.title2.weight(.bold))
                                     .foregroundStyle(Tema.azul)
                             }
                         }
@@ -451,20 +688,107 @@ struct ConfirmarReservaSheet: View {
                         Task { await confirmar() }
                     }
 
-                    Text("Al confirmar se crea la reserva en estado PENDIENTE. Debes pagar el depósito del 50 % para confirmarla.")
-                        .font(.system(size: 11))
+                    Text("Al confirmar se crea la reserva en estado PENDIENTE. "
+                         + "Debes pagar el depósito del 50 % para confirmarla.")
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(16)
             }
             .background(Tema.fondo.ignoresSafeArea())
-            .navigationTitle("Confirmar")
+            .navigationTitle("Confirmar reserva")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
                 }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var cabecera: some View {
+        ZStack(alignment: .bottomLeading) {
+            ImagenRemota(ruta: item.imagenUrl, iconoRespaldo: icono, alto: 150)
+
+            LinearGradient(colors: [.clear, Color.black.opacity(0.60)],
+                           startPoint: .center, endPoint: .bottom)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.categoriaNombre)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text("\(Tema.soles(item.precioDesde)) por noche")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: 150)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+    }
+
+    /// Contador táctil de huéspedes, coherente con el de la búsqueda.
+    private func contador(_ titulo: String, valor: Binding<Int>,
+                          rango: ClosedRange<Int>, icono: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icono)
+                .font(.caption)
+                .foregroundStyle(Tema.azul)
+
+            Text(titulo)
+                .font(.subheadline)
+                .foregroundStyle(Tema.texto)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Button {
+                    if valor.wrappedValue > rango.lowerBound {
+                        valor.wrappedValue -= 1
+                    }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Tema.azulClaro)
+                        .foregroundStyle(valor.wrappedValue > rango.lowerBound
+                                         ? Tema.azul : Tema.textoSecundario.opacity(0.4))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(valor.wrappedValue <= rango.lowerBound)
+                .accessibilityLabel("Quitar \(titulo.lowercased())")
+
+                Text("\(valor.wrappedValue)")
+                    .font(.subheadline.weight(.bold))
+                    .frame(minWidth: 18)
+                    .contentTransition(.numericText())
+
+                Button {
+                    if valor.wrappedValue < rango.upperBound {
+                        valor.wrappedValue += 1
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 30, height: 30)
+                        .background(Tema.azul.opacity(0.12))
+                        .foregroundStyle(valor.wrappedValue < rango.upperBound
+                                         ? Tema.azul : Tema.textoSecundario.opacity(0.4))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(valor.wrappedValue >= rango.upperBound)
+                .accessibilityLabel("Añadir \(titulo.lowercased())")
             }
         }
     }
@@ -479,10 +803,10 @@ struct ConfirmarReservaSheet: View {
     private func fila(_ etiqueta: String, _ valor: String) -> some View {
         HStack {
             Text(etiqueta)
-                .font(.system(size: 12))
+                .font(.subheadline)
                 .foregroundStyle(Tema.textoSecundario)
             Spacer()
-            Text(valor).font(.system(size: 13, weight: .medium))
+            Text(valor).font(.subheadline.weight(.medium))
         }
     }
 

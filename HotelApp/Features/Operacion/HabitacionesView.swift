@@ -10,12 +10,23 @@ struct HabitacionesView: View {
     @Environment(SesionStore.self) private var sesion
     @Environment(OperacionStore.self) private var operacion
     @Environment(CatalogoStore.self) private var catalogo
+    @Environment(SedeActivaStore.self) private var sedeActiva
 
     @State private var filtro: String?
     @State private var seleccionada: Habitacion?
     @State private var error: String?
 
-    private var sedeId: Int? { sesion.sedePrincipal?.id }
+    private var usuario: Usuario? { sesion.usuario }
+
+    private var sedeId: Int? {
+        guard let usuario else { return sesion.sedePrincipal?.id }
+        return sedeActiva.idEfectivo(para: usuario)
+    }
+
+    private var sedeActual: Sede? {
+        guard let usuario else { return sesion.sedePrincipal }
+        return sedeActiva.efectiva(para: usuario)
+    }
 
     /// Filtro del tablero. `estado == nil` es "Todas".
     private struct FiltroHabitacion: Identifiable {
@@ -64,8 +75,31 @@ struct HabitacionesView: View {
             .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
-        .navigationTitle("Habitaciones")
+        .navigationTitle(sedeActual.map { "Habitaciones · \($0.nombre)" } ?? "Habitaciones")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let usuario, usuario.puedeVerReportes, usuario.sedes.count > 1 {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        ForEach(usuario.sedes) { sede in
+                            Button {
+                                guard sedeActiva.seleccionar(sede.id, para: usuario) else { return }
+                                Task { await recargar(forzar: true) }
+                            } label: {
+                                if sede.id == sedeId {
+                                    Label(sede.nombre, systemImage: "checkmark")
+                                } else {
+                                    Text(sede.nombre)
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "building.2")
+                    }
+                    .accessibilityLabel("Cambiar de sede")
+                }
+            }
+        }
         .refreshable { await recargar(forzar: true) }
         .task { await cargar() }
         .sheet(item: $seleccionada) { h in
@@ -490,9 +524,28 @@ struct DetalleHabitacionSheet: View {
             .clipped()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(habitacion.categoriaNombre)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Tema.texto)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(habitacion.categoriaNombre)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Tema.texto)
+
+                    Spacer(minLength: 8)
+
+                    if let precio = categoria?.precioBase {
+                        HStack(spacing: 2) {
+                            Text(Tema.soles(precio))
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(Tema.azul)
+                            Text("/noche")
+                                .font(.caption2)
+                                .foregroundStyle(Tema.textoSecundario)
+                        }
+                    } else if categoria != nil {
+                        Text("Sin tarifa")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Tema.alerta)
+                    }
+                }
 
                 HStack(spacing: 14) {
                     Label("Piso \(habitacion.pisoNumero)", systemImage: "building.2")

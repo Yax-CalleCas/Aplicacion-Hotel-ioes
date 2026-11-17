@@ -19,8 +19,8 @@ struct OperacionHomeView: View {
     let usuario: Usuario
 
     @Environment(OperacionStore.self) private var operacion
+    @Environment(SedeActivaStore.self) private var sedeActiva
 
-    @State private var sedeId: Int?
     @State private var mostrandoWalkIn = false
     @State private var animarAnillo = false
 
@@ -63,7 +63,7 @@ struct OperacionHomeView: View {
         .refreshable { await cargar() }
         .task { await cargar() }
         .sheet(isPresented: $mostrandoWalkIn) {
-            if let sede = sedeId ?? usuario.sedePrincipal?.id {
+            if let sede = sedeActiva.idEfectivo(para: usuario) {
                 WalkInView(sedeId: sede)
             }
         }
@@ -301,11 +301,11 @@ struct OperacionHomeView: View {
             Menu {
                 ForEach(usuario.sedes) { sede in
                     Button {
-                        guard sede.id != (sedeId ?? usuario.sedePrincipal?.id) else { return }
-                        sedeId = sede.id
+                        let cambio = sedeActiva.seleccionar(sede.id, para: usuario)
+                        guard cambio else { return }
                         Task { await cargar() }
                     } label: {
-                        if sede.id == (sedeId ?? usuario.sedePrincipal?.id) {
+                        if sede.id == sedeActiva.idEfectivo(para: usuario) {
                             Label(sede.nombre, systemImage: "checkmark")
                         } else {
                             Text(sede.nombre)
@@ -347,8 +347,7 @@ struct OperacionHomeView: View {
     }
 
     private var sedeActual: Sede? {
-        guard let id = sedeId else { return usuario.sedePrincipal }
-        return usuario.sedes.first { $0.id == id } ?? usuario.sedePrincipal
+        sedeActiva.efectiva(para: usuario)
     }
 
     // MARK: - Hero: ocupación
@@ -1083,7 +1082,7 @@ struct OperacionHomeView: View {
     // MARK: - Carga
 
     private func cargar() async {
-        let sede = sedeId ?? usuario.sedePrincipal?.id
+        let sede = sedeActiva.idEfectivo(para: usuario)
 
         // Housekeeping puro: sin dashboard, sin reservas y sin pagos.
         guard esPanelCompleto else {

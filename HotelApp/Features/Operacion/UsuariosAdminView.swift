@@ -2,47 +2,80 @@ import SwiftUI
 
 /// Gestión de usuarios (solo ADMIN).
 ///
-/// Consume `/admin/usuarios`: listar, crear, cambiar estado, resetear
-/// contraseña y desbloquear cuentas.
+/// Consume `/admin/usuarios`: listar, buscar, crear, resetear contraseña,
+/// activar/desactivar y desbloquear cuentas.
+///
+/// El caso que motivó esta pantalla es de mostrador: un huésped se equivoca
+/// varias veces con su contraseña, la cuenta queda bloqueada y está delante
+/// del recepcionista esperando. Mandarlo a "abre la web" no es viable, por eso
+/// el desbloqueo vive aquí y no solo en el back office.
 struct UsuariosAdminView: View {
 
     @State private var usuarios: [Usuario] = []
     @State private var cargando = true
     @State private var error: String?
-    @State private var mensaje: String?
+    @State private var busqueda = ""
     @State private var seleccionado: Usuario?
     @State private var mostrarCrear = false
+    @State private var soloBloqueados = false
 
     private let api = HotelAPI.shared
 
+    /// Filtro local por nombre, correo o rol. Con 300 cuartos y una plantilla
+    /// grande, buscar en el servidor por cada tecla sería peor que filtrar
+    /// los ~20 usuarios ya descargados.
+    private var filtrados: [Usuario] {
+        let termino = busqueda.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        var lista = usuarios
+        if !termino.isEmpty {
+            lista = lista.filter {
+                $0.nombre.lowercased().contains(termino)
+                    || $0.email.lowercased().contains(termino)
+                    || $0.nombresRol.joined(separator: " ").lowercased().contains(termino)
+            }
+        }
+        if soloBloqueados {
+            lista = lista.filter { !$0.activo }
+        }
+        return lista
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 if let error {
                     Aviso(tipo: .peligro, titulo: "Error", mensaje: error)
                 }
-                if let mensaje {
-                    Aviso(tipo: .exito, titulo: "Listo", mensaje: mensaje)
-                }
+
+                filtros
 
                 if cargando && usuarios.isEmpty {
-                    ProgressView().padding(.top, 40)
-                } else if usuarios.isEmpty {
+                    esqueleto
+                } else if filtrados.isEmpty {
                     EstadoVacio(icono: "person.2",
-                                titulo: "Sin usuarios",
-                                mensaje: "Crea el primer usuario con el botón +.")
+                                titulo: busqueda.isEmpty ? "Sin usuarios" : "Sin resultados",
+                                mensaje: busqueda.isEmpty
+                                  ? "Crea el primer usuario con el botón +."
+                                  : "No hay usuarios que coincidan con la búsqueda.")
                 } else {
-                    ForEach(usuarios) { u in
-                        Button {
-                            seleccionado = u
-                        } label: {
-                            tarjeta(u)
+                    LazyVStack(spacing: 10) {
+                        ForEach(filtrados) { u in
+                            Button {
+                                seleccionado = u
+                            } label: {
+                                tarjeta(u)
+                            }
+                            .buttonStyle(EstiloPresionable())
+                            .accessibilityLabel("\(u.nombre), \(u.email), "
+                                                + "\(u.nombresRol.joined(separator: ", ")), "
+                                                + (u.activo ? "activo" : "inactivo"))
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Usuarios")
@@ -54,6 +87,7 @@ struct UsuariosAdminView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Crear usuario")
             }
         }
         .refreshable { await cargar() }
@@ -66,36 +100,133 @@ struct UsuariosAdminView: View {
         }
     }
 
+    // MARK: - Filtros
+
+    private var filtros: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.subheadline)
+                    .foregroundStyle(Tema.textoSecundario)
+
+                TextField("Buscar por nombre, correo o rol", text: $busqueda)
+                    .font(.subheadline)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                if !busqueda.isEmpty {
+                    Button {
+                        busqueda = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Tema.textoSecundario)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Borrar búsqueda")
+                }
+            }
+            .padding(.horizontal, 12)
+            .frame(minHeight: 44)
+            .background(Tema.superficie)
+            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                 style: .continuous)
+                    .stroke(Tema.borde, lineWidth: 1))
+
+            HStack(spacing: 8) {
+                Text("\(filtrados.count) usuario(s)")
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+
+                Spacer(minLength: 0)
+
+                Toggle(isOn: $soloBloqueados) {
+                    Text("Solo bloqueados")
+                        .font(.caption.weight(.semibold))
+                }
+                .toggleStyle(.button)
+                .tint(Tema.peligro)
+            }
+        }
+    }
+
+    // MARK: - Tarjeta
+
     private func tarjeta(_ u: Usuario) -> some View {
-        Tarjeta {
-            HStack(alignment: .top, spacing: 10) {
+        Tarjeta(padding: 14) {
+            HStack(alignment: .top, spacing: 12) {
                 ZStack {
-                    Circle().fill(Tema.azulClaro).frame(width: 40, height: 40)
-                    Text(u.iniciales.isEmpty
-                         ? String(u.nombre.prefix(1)).uppercased()
-                         : u.iniciales)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Tema.azulOscuro)
+                    Circle()
+                        .fill(u.activo ? Tema.azul.opacity(0.12)
+                                       : Tema.textoSecundario.opacity(0.12))
+                        .frame(width: 42, height: 42)
+
+                    Text(iniciales(u))
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(u.activo ? Tema.azul : Tema.textoSecundario)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(u.nombre)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Tema.texto)
+                        .lineLimit(1)
+
                     Text(u.email)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
+                        .lineLimit(1)
+
                     Text(u.nombresRol.joined(separator: " · "))
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(Tema.azul)
+                        .lineLimit(1)
+
+                    if let sede = u.sedePrincipal {
+                        Label(sede.nombre, systemImage: "building.2")
+                            .font(.caption2)
+                            .foregroundStyle(Tema.textoSecundario)
+                            .lineLimit(1)
+                    }
                 }
 
-                Spacer()
+                Spacer(minLength: 4)
 
                 EtiquetaEstado(texto: u.activo ? "Activo" : "Inactivo",
                                color: u.activo ? Tema.exito : Tema.peligro)
             }
         }
     }
+
+    private func iniciales(_ u: Usuario) -> String {
+        let letras = u.iniciales.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !letras.isEmpty { return letras }
+        return String(u.nombre.prefix(1)).uppercased()
+    }
+
+    private var esqueleto: some View {
+        LazyVStack(spacing: 10) {
+            ForEach(0..<5, id: \.self) { _ in
+                Tarjeta(padding: 14) {
+                    HStack(spacing: 12) {
+                        Circle().fill(Tema.textoSecundario.opacity(0.15))
+                            .frame(width: 42, height: 42)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Nombre Apellido").font(.subheadline)
+                            Text("correo@hotel.com").font(.caption)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+        }
+        .redacted(reason: .placeholder)
+        .allowsHitTesting(false)
+    }
+
+    // MARK: - Carga
 
     private func cargar() async {
         cargando = true
@@ -113,6 +244,8 @@ struct UsuariosAdminView: View {
     }
 }
 
+// MARK: - Alta de usuario
+
 /// Alta de usuario con rol y sedes.
 struct CrearUsuarioSheet: View {
 
@@ -124,7 +257,7 @@ struct CrearUsuarioSheet: View {
     @State private var email = ""
     @State private var password = ""
     @State private var telefono = ""
-    @State private var rolSeleccionado = "CLIENTE"
+    @State private var rolSeleccionado = "RECEPCIONISTA"
     @State private var sedes: [Sede] = []
     @State private var sedesMarcadas: Set<Int> = []
 
@@ -132,53 +265,86 @@ struct CrearUsuarioSheet: View {
     @State private var error: String?
 
     private let api = HotelAPI.shared
-    private let roles = ["CLIENTE", "RECEPCIONISTA", "HOUSEKEEPING", "GERENTE", "ADMIN"]
+
+    /// Roles que un admin puede asignar desde el móvil. "CLIENTE" se excluye:
+    /// los clientes se registran solos y no deben crearse a mano.
+    private let roles = ["RECEPCIONISTA", "HOUSEKEEPING", "GERENTE", "ADMIN"]
+
+    private var nombreLimpio: String {
+        nombre.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private var emailLimpio: String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
 
     private var valido: Bool {
-        nombre.trimmingCharacters(in: .whitespaces).count >= 3
-            && email.contains("@") && password.count >= 8
+        nombreLimpio.count >= 3
+            && emailLimpio.contains("@") && emailLimpio.contains(".")
+            && password.count >= 8
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 14) {
-                    campo("Nombre completo", $nombre)
-                    campo("Correo", $email, teclado: .emailAddress)
-                    campo("Teléfono (opcional)", $telefono, teclado: .phonePad)
+                VStack(spacing: 16) {
+                    Tarjeta {
+                        VStack(spacing: 14) {
+                            campo("Nombre completo", $nombre)
+                            campo("Correo", $email, teclado: .emailAddress)
+                            campo("Teléfono (opcional)", $telefono, teclado: .phonePad)
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Contraseña").font(.system(size: 12, weight: .semibold))
-                        SecureField("Mínimo 8 caracteres", text: $password)
-                            .textContentType(.newPassword)
-                            .padding(11)
-                            .background(Tema.fondo)
-                            .clipShape(RoundedRectangle(cornerRadius: 9))
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("Contraseña")
+                                    .font(.subheadline.weight(.semibold))
+                                SecureField("Mínimo 8 caracteres", text: $password)
+                                    .textContentType(.newPassword)
+                                    .font(.body)
+                                    .padding(11)
+                                    .background(Tema.fondo)
+                                    .clipShape(RoundedRectangle(
+                                        cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
+                            }
+                        }
                     }
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Rol").font(.system(size: 12, weight: .semibold))
-                        Picker("Rol", selection: $rolSeleccionado) {
-                            ForEach(roles, id: \.self) { Text($0).tag($0) }
+                    Tarjeta {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Rol")
+                                .font(.subheadline.weight(.semibold))
+
+                            Picker("Rol", selection: $rolSeleccionado) {
+                                ForEach(roles, id: \.self) { Text($0).tag($0) }
+                            }
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(8)
+                            .background(Tema.fondo)
+                            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                        style: .continuous))
                         }
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(8)
-                        .background(Tema.fondo)
-                        .clipShape(RoundedRectangle(cornerRadius: 9))
                     }
 
                     if !sedes.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Sedes asignadas").font(.system(size: 12, weight: .semibold))
-                            ForEach(sedes) { sede in
-                                Toggle(sede.nombre, isOn: Binding(
-                                    get: { sedesMarcadas.contains(sede.id) },
-                                    set: { marcado in
-                                        if marcado { sedesMarcadas.insert(sede.id) }
-                                        else { sedesMarcadas.remove(sede.id) }
-                                    }))
-                                    .font(.system(size: 12))
+                        Tarjeta {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Sedes asignadas")
+                                    .font(.subheadline.weight(.semibold))
+
+                                Text("Sin marcar ninguna, el usuario no podrá operar "
+                                     + "en ninguna sede.")
+                                    .font(.caption)
+                                    .foregroundStyle(Tema.textoSecundario)
+
+                                ForEach(sedes) { sede in
+                                    Toggle(sede.nombre, isOn: Binding(
+                                        get: { sedesMarcadas.contains(sede.id) },
+                                        set: { marcado in
+                                            if marcado { sedesMarcadas.insert(sede.id) }
+                                            else { sedesMarcadas.remove(sede.id) }
+                                        }))
+                                        .font(.subheadline)
+                                }
                             }
                         }
                     }
@@ -213,14 +379,17 @@ struct CrearUsuarioSheet: View {
     private func campo(_ etiqueta: String, _ texto: Binding<String>,
                        teclado: UIKeyboardType = .default) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(etiqueta).font(.system(size: 12, weight: .semibold))
+            Text(etiqueta)
+                .font(.subheadline.weight(.semibold))
             TextField("", text: texto)
                 .keyboardType(teclado)
                 .textInputAutocapitalization(teclado == .emailAddress ? .never : .words)
                 .autocorrectionDisabled(teclado == .emailAddress)
+                .font(.body)
                 .padding(11)
                 .background(Tema.fondo)
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
         }
     }
 
@@ -231,10 +400,11 @@ struct CrearUsuarioSheet: View {
 
         do {
             _ = try await api.crearUsuario(CrearUsuarioRequest(
-                nombre: nombre.trimmingCharacters(in: .whitespaces),
-                email: email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+                nombre: nombreLimpio,
+                email: emailLimpio,
                 password: password,
-                telefono: telefono.isEmpty ? nil : telefono,
+                telefono: telefono.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? nil : telefono,
                 roles: [rolSeleccionado],
                 sedes: sedesMarcadas.isEmpty ? nil : Array(sedesMarcadas)))
 
@@ -250,7 +420,10 @@ struct CrearUsuarioSheet: View {
     }
 }
 
-/// Acciones sobre un usuario: activar/desactivar, resetear y desbloquear.
+// MARK: - Detalle de usuario
+
+/// Acciones sobre un usuario: desbloquear, resetear contraseña y
+/// activar/desactivar la cuenta.
 struct DetalleUsuarioSheet: View {
 
     let usuario: Usuario
@@ -263,72 +436,122 @@ struct DetalleUsuarioSheet: View {
     @State private var error: String?
     @State private var mensaje: String?
     @State private var bloqueo: BloqueoCuenta?
+    @State private var mostrarBloqueo = false
 
     private let api = HotelAPI.shared
+
+    private var passwordLimpia: String {
+        nuevaPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    Tarjeta {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(usuario.nombre)
-                                .font(.system(size: 17, weight: .semibold))
-                            Text(usuario.email)
-                                .font(.system(size: 12))
-                                .foregroundStyle(Tema.textoSecundario)
-                            Text(usuario.nombresRol.joined(separator: " · "))
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Tema.azul)
-                        }
-                    }
+                    cabecera
 
                     if let bloqueo, bloqueo.bloqueado {
-                        Aviso(tipo: .alerta, titulo: "Cuenta bloqueada",
-                              mensaje: "\(bloqueo.intentosFallidos) intentos fallidos · nivel \(bloqueo.nivelBloqueo)")
+                        Tarjeta {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label("Cuenta bloqueada", systemImage: "lock.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(Tema.peligro)
 
-                        BotonPrincipal(titulo: "Desbloquear cuenta",
-                                       icono: "lock.open",
-                                       cargando: procesando) {
-                            Task { await desbloquear() }
+                                Text("\(bloqueo.intentosFallidos) intento(s) fallido(s) · "
+                                     + "nivel \(bloqueo.nivelBloqueo)")
+                                    .font(.caption)
+                                    .foregroundStyle(Tema.textoSecundario)
+
+                                if let reintentar = bloqueo.reintentarEnSegundos,
+                                   reintentar > 0 {
+                                    Text("Se desbloquea sola en \(reintentar) s.")
+                                        .font(.caption)
+                                        .foregroundStyle(Tema.textoSecundario)
+                                }
+
+                                BotonPrincipal(titulo: "Desbloquear cuenta",
+                                               icono: "lock.open",
+                                               cargando: procesando) {
+                                    Task { await desbloquear() }
+                                }
+                            }
                         }
                     }
 
                     Tarjeta {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Resetear contraseña")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.headline)
+
+                            Text("El usuario tendrá que iniciar sesión de nuevo.")
+                                .font(.caption)
+                                .foregroundStyle(Tema.textoSecundario)
 
                             SecureField("Nueva contraseña (mín. 8)", text: $nuevaPassword)
                                 .textContentType(.newPassword)
-                                .font(.system(size: 12))
+                                .font(.body)
                                 .padding(10)
                                 .background(Tema.fondo)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                            style: .continuous))
 
                             BotonPrincipal(titulo: "Aplicar",
-                                           icono: "key",
+                                           icono: "key.fill",
                                            cargando: procesando,
-                                           deshabilitado: nuevaPassword.count < 8) {
+                                           deshabilitado: passwordLimpia.count < 8) {
                                 Task { await resetPassword() }
                             }
                         }
                     }
 
-                    Button(role: usuario.activo ? .destructive : .none) {
-                        Task { await cambiarEstado() }
-                    } label: {
-                        Label(usuario.activo ? "Desactivar cuenta" : "Activar cuenta",
-                              systemImage: usuario.activo ? "person.crop.circle.badge.xmark"
-                                                          : "person.crop.circle.badge.checkmark")
-                            .font(.system(size: 13, weight: .medium))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background((usuario.activo ? Tema.peligro : Tema.exito).opacity(0.1))
-                            .foregroundStyle(usuario.activo ? Tema.peligro : Tema.exito)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    Tarjeta {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Bloqueo de acceso")
+                                .font(.headline)
+
+                            if usuario.activo {
+                                Text("Suspende la cuenta para que no pueda iniciar sesión. "
+                                     + "Se cierran sus sesiones abiertas y se guarda el motivo.")
+                                    .font(.caption)
+                                    .foregroundStyle(Tema.textoSecundario)
+
+                                Button(role: .destructive) {
+                                    mostrarBloqueo = true
+                                } label: {
+                                    Label("Bloquear el acceso", systemImage: "hand.raised.fill")
+                                        .font(.subheadline.weight(.semibold))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(minHeight: 44)
+                                        .background(Tema.peligro.opacity(0.10))
+                                        .foregroundStyle(Tema.peligro)
+                                        .clipShape(RoundedRectangle(
+                                            cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
+                                }
+                                .buttonStyle(EstiloPresionable())
+                                .disabled(procesando)
+                                .accessibilityLabel("Bloquear el acceso de \(usuario.nombre)")
+                            } else {
+                                Text("Esta cuenta está bloqueada: no puede iniciar sesión.")
+                                    .font(.caption)
+                                    .foregroundStyle(Tema.textoSecundario)
+
+                                if let motivo = usuario.motivoDesactivacion,
+                                   !motivo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Text("Motivo: \(motivo)")
+                                        .font(.caption)
+                                        .foregroundStyle(Tema.alerta)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                BotonPrincipal(titulo: "Restablecer el acceso",
+                                               icono: "lock.open",
+                                               cargando: procesando) {
+                                    Task { await cambiarEstado(motivo: nil) }
+                                }
+                            }
+                        }
                     }
-                    .disabled(procesando)
 
                     if let error {
                         Aviso(tipo: .peligro, titulo: "Error", mensaje: error)
@@ -350,17 +573,73 @@ struct DetalleUsuarioSheet: View {
             .task {
                 bloqueo = try? await api.estadoBloqueo(usuarioId: usuario.id)
             }
+            .sheet(isPresented: $mostrarBloqueo) {
+                BloquearAccesoSheet(nombre: usuario.nombre) { motivo in
+                    await cambiarEstado(motivo: motivo)
+                }
+            }
         }
     }
 
+    private var cabecera: some View {
+        Tarjeta {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Tema.azul.opacity(0.12))
+                            .frame(width: 48, height: 48)
+                        Text(usuario.iniciales.isEmpty
+                             ? String(usuario.nombre.prefix(1)).uppercased()
+                             : usuario.iniciales)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Tema.azul)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(usuario.nombre)
+                            .font(.headline)
+                            .foregroundStyle(Tema.texto)
+                        Text(usuario.email)
+                            .font(.caption)
+                            .foregroundStyle(Tema.textoSecundario)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    EtiquetaEstado(texto: usuario.activo ? "Activo" : "Inactivo",
+                                   color: usuario.activo ? Tema.exito : Tema.peligro)
+                }
+
+                Text(usuario.nombresRol.joined(separator: " · "))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Tema.azul)
+
+                if usuario.sedes.isEmpty {
+                    Label("Sin sedes asignadas", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(Tema.alerta)
+                } else {
+                    Label(usuario.sedes.map(\.nombre).joined(separator: ", "),
+                          systemImage: "building.2")
+                        .font(.caption)
+                        .foregroundStyle(Tema.textoSecundario)
+                }
+            }
+        }
+    }
+
+    // MARK: - Acciones
+
     private func resetPassword() async {
+        guard !procesando else { return }
         procesando = true
         error = nil
         mensaje = nil
 
         do {
-            _ = try await api.resetPassword(id: usuario.id, password: nuevaPassword)
-            mensaje = "Contraseña actualizada."
+            _ = try await api.resetPassword(id: usuario.id, password: passwordLimpia)
+            mensaje = "Contraseña actualizada. El usuario debe volver a entrar."
             nuevaPassword = ""
         } catch let apiError as APIError {
             error = apiError.mensajeUsuario
@@ -371,7 +650,8 @@ struct DetalleUsuarioSheet: View {
         procesando = false
     }
 
-    private func cambiarEstado() async {
+    private func cambiarEstado(motivo: String?) async {
+        guard !procesando else { return }
         procesando = true
         error = nil
         mensaje = nil
@@ -380,8 +660,8 @@ struct DetalleUsuarioSheet: View {
             _ = try await api.cambiarEstadoUsuario(
                 id: usuario.id,
                 activo: !usuario.activo,
-                motivo: usuario.activo ? "Desactivado desde iOS" : nil)
-            mensaje = usuario.activo ? "Cuenta desactivada." : "Cuenta activada."
+                motivo: usuario.activo ? motivo : nil)
+            mensaje = usuario.activo ? "Acceso bloqueado." : "Acceso restablecido."
             await alActualizar()
         } catch let apiError as APIError {
             error = apiError.mensajeUsuario
@@ -393,6 +673,7 @@ struct DetalleUsuarioSheet: View {
     }
 
     private func desbloquear() async {
+        guard !procesando else { return }
         procesando = true
         error = nil
         mensaje = nil
@@ -408,5 +689,137 @@ struct DetalleUsuarioSheet: View {
         }
 
         procesando = false
+    }
+}
+
+// MARK: - Bloqueo de acceso
+
+/// Motivo del bloqueo.
+///
+/// El backend rechaza la desactivación sin motivo (`MOTIVO_REQUERIDO`), así
+/// que se pide aquí en lugar de escribir un texto genérico: el motivo queda
+/// guardado en la cuenta y es lo que después explica por qué se le cerró el
+/// acceso a esa persona.
+struct BloquearAccesoSheet: View {
+
+    let nombre: String
+    let alConfirmar: (String) async -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var motivo = ""
+    @State private var enviando = false
+
+    /// Motivos frecuentes en recepción. Rellenan el campo y el admin puede
+    /// editarlos antes de confirmar.
+    private let sugerencias = [
+        "Conducta inapropiada con el personal",
+        "Daños a las instalaciones",
+        "Impago pendiente",
+        "Uso indebido de la cuenta",
+        "Solicitud del propio huésped",
+    ]
+
+    private var motivoLimpio: String {
+        motivo.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var valido: Bool { motivoLimpio.count >= 5 }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Aviso(tipo: .alerta, titulo: "Vas a bloquear el acceso",
+                          mensaje: "\(nombre) no podrá iniciar sesión y se cerrarán "
+                                 + "sus sesiones abiertas hasta que lo restablezcas.")
+
+                    Tarjeta {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Motivo")
+                                .font(.subheadline.weight(.semibold))
+
+                            TextField("Explica brevemente por qué se bloquea",
+                                      text: $motivo, axis: .vertical)
+                                .lineLimit(2...4)
+                                .font(.body)
+                                .padding(10)
+                                .background(Tema.fondo)
+                                .clipShape(RoundedRectangle(
+                                    cornerRadius: Tema.radioPequeno,
+                                    style: .continuous))
+
+                            Text("\(motivoLimpio.count)/255")
+                                .font(.caption2)
+                                .foregroundStyle(Tema.textoSecundario)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Motivos frecuentes")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Tema.textoSecundario)
+                            .padding(.leading, 4)
+
+                        ForEach(sugerencias, id: \.self) { sugerencia in
+                            Button {
+                                motivo = sugerencia
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: motivo == sugerencia
+                                          ? "checkmark.circle.fill"
+                                          : "circle")
+                                        .font(.subheadline)
+                                        .foregroundStyle(motivo == sugerencia
+                                                         ? Tema.azul : Tema.textoSecundario)
+
+                                    Text(sugerencia)
+                                        .font(.subheadline)
+                                        .foregroundStyle(Tema.texto)
+                                        .multilineTextAlignment(.leading)
+
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 44)
+                                .background(Tema.superficie)
+                                .clipShape(RoundedRectangle(
+                                    cornerRadius: Tema.radioPequeno,
+                                    style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                     style: .continuous)
+                                        .stroke(Tema.borde, lineWidth: 1))
+                            }
+                            .buttonStyle(EstiloPresionable())
+                        }
+                    }
+
+                    BotonPrincipal(titulo: "Bloquear acceso",
+                                   icono: "hand.raised.fill",
+                                   cargando: enviando,
+                                   deshabilitado: !valido) {
+                        Task {
+                            enviando = true
+                            await alConfirmar(motivoLimpio)
+                            enviando = false
+                            dismiss()
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .background(Tema.fondo.ignoresSafeArea())
+            .navigationTitle("Bloquear acceso")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 }

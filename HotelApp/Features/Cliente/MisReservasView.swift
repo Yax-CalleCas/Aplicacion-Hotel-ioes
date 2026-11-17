@@ -16,7 +16,7 @@ struct MisReservasView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: 16) {
                 buscadorCodigo
 
                 if reservas.desdeCache {
@@ -25,23 +25,28 @@ struct MisReservasView: View {
                 }
 
                 if reservas.cargando && reservas.reservas.isEmpty {
-                    ProgressView("Cargando reservas...").padding(.top, 40)
+                    esqueleto
                 } else if reservas.reservas.isEmpty {
                     EstadoVacio(icono: "calendar",
                                 titulo: "Sin reservas",
                                 mensaje: "Busca disponibilidad y reserva tu primera estadía.")
                 } else {
-                    ForEach(reservas.reservas) { r in
-                        NavigationLink {
-                            DetalleReservaView(reservaId: r.id)
-                        } label: {
-                            tarjeta(r)
+                    LazyVStack(spacing: 12) {
+                        ForEach(reservas.reservas) { r in
+                            NavigationLink {
+                                DetalleReservaView(reservaId: r.id)
+                            } label: {
+                                tarjeta(r)
+                            }
+                            .buttonStyle(EstiloPresionable())
+                            .accessibilityLabel(accessibilityTarjeta(r))
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Mis reservas")
@@ -61,99 +66,155 @@ struct MisReservasView: View {
 
     private var buscadorCodigo: some View {
         Tarjeta {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Buscar por código")
-                    .font(.system(size: 12, weight: .semibold))
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Buscar por código", systemImage: "number")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Tema.texto)
 
                 HStack(spacing: 8) {
                     TextField("RES-2026-00001", text: $codigo)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                        .font(.system(size: 13, design: .monospaced))
-                        .padding(10)
+                        .font(.body.monospaced())
+                        .padding(11)
                         .background(Tema.fondo)
-                        .clipShape(RoundedRectangle(cornerRadius: 9))
+                        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                    style: .continuous))
 
                     Button {
                         Task { await buscarPorCodigo() }
                     } label: {
-                        if buscandoCodigo {
-                            ProgressView().tint(.white)
-                        } else {
-                            Image(systemName: "magnifyingglass")
+                        Group {
+                            if buscandoCodigo {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.subheadline.weight(.semibold))
+                            }
                         }
+                        .frame(width: 46, height: 46)
+                        .background(codigoLimpio.isEmpty ? Tema.azul.opacity(0.4) : Tema.azul)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                    style: .continuous))
                     }
-                    .frame(width: 44, height: 40)
-                    .background(Tema.azul)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
-                    .disabled(codigo.trimmingCharacters(in: .whitespaces).isEmpty || buscandoCodigo)
+                    .buttonStyle(.plain)
+                    .disabled(codigoLimpio.isEmpty || buscandoCodigo)
+                    .accessibilityLabel("Buscar reserva por código")
                 }
 
                 if let errorCodigo {
-                    Text(errorCodigo)
-                        .font(.system(size: 11))
+                    Label(errorCodigo, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
                         .foregroundStyle(Tema.peligro)
                 }
             }
         }
     }
 
+    private var codigoLimpio: String {
+        codigo.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func tarjeta(_ r: ReservaResumen) -> some View {
         let estado = Etiquetas.estadoReserva(r.estado)
 
-        return Tarjeta {
+        return HStack(spacing: 0) {
+            Rectangle()
+                .fill(estado.color)
+                .frame(width: 4)
+
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(r.codigo)
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    Spacer()
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(r.codigo)
+                            .font(.caption.weight(.semibold).monospaced())
+                            .foregroundStyle(Tema.textoSecundario)
+                        Text(FechaAPI.formatear(FechaAPI.parsear(r.checkIn))
+                             + " → " + FechaAPI.formatear(FechaAPI.parsear(r.checkOut)))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Tema.texto)
+                    }
+
+                    Spacer(minLength: 8)
+
                     EtiquetaEstado(texto: estado.texto, color: estado.color)
                 }
 
                 // El cliente debe saber en la lista si le falta pagar, si su
-                // pago esta en revision o si ya esta todo en orden.
+                // pago está en revisión o si ya está todo en orden.
                 if r.estado == "PENDIENTE" {
                     HStack(spacing: 6) {
                         Image(systemName: r.pagoEnRevision
-                              ? "clock.arrow.circlepath" : "exclamationmark.circle")
-                            .font(.system(size: 10))
+                              ? "clock.arrow.circlepath" : "exclamationmark.circle.fill")
+                            .font(.caption2)
                         Text(r.pagoEnRevision
                              ? "Pago en revisión por recepción"
                              : "Falta el depósito del 50 %")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.caption.weight(.medium))
+                        Spacer(minLength: 0)
                     }
                     .foregroundStyle(r.pagoEnRevision ? Tema.info : Tema.alerta)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background((r.pagoEnRevision ? Tema.info : Tema.alerta).opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
 
-                HStack {
-                    Label(FechaAPI.formatear(FechaAPI.parsear(r.checkIn)),
-                          systemImage: "calendar")
-                        .font(.system(size: 11))
+                HStack(alignment: .firstTextBaseline) {
+                    Label(r.huespedNombre, systemImage: "person")
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
-                    Text("→").foregroundStyle(Tema.textoSecundario)
-                    Text(FechaAPI.formatear(FechaAPI.parsear(r.checkOut)))
-                        .font(.system(size: 11))
-                        .foregroundStyle(Tema.textoSecundario)
-                }
+                        .lineLimit(1)
 
-                HStack {
-                    Text(r.huespedNombre)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Tema.textoSecundario)
-                    Spacer()
+                    Spacer(minLength: 8)
+
                     Text(Tema.soles(r.montoTotal))
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.headline)
                         .foregroundStyle(Tema.azul)
                 }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+    }
+
+    private func accessibilityTarjeta(_ r: ReservaResumen) -> String {
+        let estado = Etiquetas.estadoReserva(r.estado)
+        return "Reserva \(r.codigo), \(estado.texto), "
+            + "\(FechaAPI.formatear(FechaAPI.parsear(r.checkIn))) a "
+            + "\(FechaAPI.formatear(FechaAPI.parsear(r.checkOut))), "
+            + "\(Tema.soles(r.montoTotal))"
+    }
+
+    private var esqueleto: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<3, id: \.self) { _ in
+                Tarjeta {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("RES-2026-00000").font(.caption)
+                        Text("01 ene → 03 ene").font(.subheadline)
+                        Divider()
+                        Text("S/ 000.00").font(.headline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .redacted(reason: .placeholder)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Acciones
 
     private func buscarPorCodigo() async {
-        let limpio = codigo.trimmingCharacters(in: .whitespaces).uppercased()
+        let limpio = codigoLimpio.uppercased()
         guard !limpio.isEmpty else { return }
 
         buscandoCodigo = true
@@ -286,13 +347,14 @@ struct DetalleReservaView: View {
                     Image(systemName: "xmark.circle")
                 }
                 Text(cancelando ? "Cancelando..." : "Cancelar reserva")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(Tema.peligro.opacity(0.08))
             .foregroundStyle(Tema.peligro)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
         }
         .disabled(cancelando || pagando)
     }
@@ -306,28 +368,28 @@ struct DetalleReservaView: View {
                     EtiquetaEstado(texto: estado.texto, color: estado.color)
                     Spacer()
                     Text(Tema.soles(r.montoTotal))
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.title.weight(.bold))
                         .foregroundStyle(Tema.azul)
                 }
 
                 Text(r.sedeNombre)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
 
                 Label("\(FechaAPI.formatear(FechaAPI.parsear(r.checkIn))) → \(FechaAPI.formatear(FechaAPI.parsear(r.checkOut)))",
                       systemImage: "calendar")
-                    .font(.system(size: 12))
+                    .font(.subheadline)
                     .foregroundStyle(Tema.textoSecundario)
 
                 Label("\(r.noches) noche(s) · \(r.adultos) adulto(s)" +
                       (r.ninos > 0 ? " · \(r.ninos) niño(s)" : ""),
                       systemImage: "person.2")
-                    .font(.system(size: 12))
+                    .font(.subheadline)
                     .foregroundStyle(Tema.textoSecundario)
 
                 if r.estaPendiente, let expira = FechaAPI.parsear(r.expiraEn) {
                     Label("Expira \(FechaAPI.formatearConHora(expira))",
                           systemImage: "clock.badge.exclamationmark")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(Tema.alerta)
                 }
             }
@@ -338,23 +400,23 @@ struct DetalleReservaView: View {
         Tarjeta {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Habitaciones")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.headline)
 
                 ForEach(r.lineas) { linea in
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(linea.categoriaNombre)
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                             Text("\(FechaAPI.formatear(FechaAPI.parsear(linea.checkIn))) → \(FechaAPI.formatear(FechaAPI.parsear(linea.checkOut))) · \(linea.noches) noche(s)")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                                 .foregroundStyle(Tema.textoSecundario)
                             Text(linea.habitacionNumero.map { "Hab. \($0)" } ?? "Se asigna al confirmar")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                                 .foregroundStyle(Tema.textoSecundario)
                         }
                         Spacer()
                         Text(Tema.soles(linea.subtotal))
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                     }
                 }
             }
@@ -366,7 +428,7 @@ struct DetalleReservaView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text("Cuenta")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.headline)
                     Spacer()
                     EtiquetaEstado(
                         texto: folio.saldo > 0 ? "Saldo pendiente" : "Pagado",
@@ -375,22 +437,22 @@ struct DetalleReservaView: View {
 
                 if folio.cargos.isEmpty {
                     Text("Sin cargos registrados.")
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
                 } else {
                     ForEach(folio.cargos) { cargo in
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(cargo.concepto.capitalized)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.caption.weight(.medium))
                                 Text(cargo.descripcion)
-                                    .font(.system(size: 9))
+                                    .font(.caption2)
                                     .foregroundStyle(Tema.textoSecundario)
                                     .lineLimit(2)
                             }
                             Spacer()
                             Text(Tema.soles(cargo.monto))
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .strikethrough(cargo.anulado)
                         }
                         .opacity(cargo.anulado ? 0.45 : 1)
@@ -402,17 +464,17 @@ struct DetalleReservaView: View {
                 fila("Total cargos", Tema.soles(folio.totalCargos))
                 fila("Pagado", "− " + Tema.soles(folio.totalPagado))
                 HStack {
-                    Text("Saldo").font(.system(size: 13, weight: .semibold))
+                    Text("Saldo").font(.headline)
                     Spacer()
                     Text(Tema.soles(folio.saldo))
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.headline)
                         .foregroundStyle(folio.saldo > 0 ? Tema.peligro : Tema.exito)
                 }
 
                 if !folio.pagos.isEmpty {
                     Divider()
                     Text("Pagos")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(Tema.textoSecundario)
 
                     ForEach(folio.pagos) { pago in
@@ -420,17 +482,17 @@ struct DetalleReservaView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text("\(pago.tipo) · \(pago.metodo)")
-                                    .font(.system(size: 10, weight: .medium))
+                                    .font(.caption2.weight(.medium))
                                 if let fecha = pago.creadoEn {
                                     Text(FechaAPI.formatearConHora(FechaAPI.parsear(fecha)))
-                                        .font(.system(size: 9))
+                                        .font(.caption2)
                                         .foregroundStyle(Tema.textoSecundario)
                                 }
                             }
                             Spacer()
                             EtiquetaEstado(texto: estado.texto, color: estado.color)
                             Text(Tema.soles(pago.monto))
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.caption2.weight(.medium))
                         }
                     }
                 }
@@ -447,26 +509,26 @@ struct DetalleReservaView: View {
         return Tarjeta {
             VStack(alignment: .leading, spacing: 12) {
                 Text(enRevision == nil ? "Pagar depósito" : "Pago en revisión")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
 
                 if let enRevision {
                     Text("Registramos tu depósito y recepción lo está validando. No necesitas volver a pagar: la reserva se confirma automáticamente.")
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
 
                     Text(Tema.soles(enRevision.monto))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.largeTitle.weight(.bold))
                         .foregroundStyle(Tema.azul)
 
                     Aviso(tipo: .info, titulo: "En verificación",
                           mensaje: "Método: \(enRevision.metodo). Te avisaremos al confirmarlo.")
                 } else {
                     Text("Paga el 50 % para confirmar tu reserva. El saldo restante se cobra al llegar.")
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(Tema.textoSecundario)
 
                     Text(Tema.soles(monto))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.largeTitle.weight(.bold))
                         .foregroundStyle(Tema.azul)
 
                     // Pago con QR: el codigo lo genera el backend y la
@@ -484,7 +546,7 @@ struct DetalleReservaView: View {
                             }
 
                             Text("Escanea el código con la cámara del celular o ábrelo aquí.")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                                 .foregroundStyle(Tema.textoSecundario)
                                 .multilineTextAlignment(.center)
 
@@ -495,12 +557,13 @@ struct DetalleReservaView: View {
                                     Image(systemName: "safari")
                                     Text("Abrir pasarela")
                                 }
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(Tema.azul.opacity(0.10))
                                 .foregroundStyle(Tema.azul)
-                                .clipShape(RoundedRectangle(cornerRadius: 9))
+                                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
                             }
                             .buttonStyle(.plain)
 
@@ -511,12 +574,13 @@ struct DetalleReservaView: View {
                                     Image(systemName: "qrcode.viewfinder")
                                     Text("Escanear con la cámara")
                                 }
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
                                 .background(Tema.azul.opacity(0.10))
                                 .foregroundStyle(Tema.azul)
-                                .clipShape(RoundedRectangle(cornerRadius: 9))
+                                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
@@ -532,7 +596,7 @@ struct DetalleReservaView: View {
                         // Registro manual (Yape, transferencia...). Queda en
                         // segundo plano: el camino principal es el QR.
                         Text("Método para el registro manual")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(Tema.textoSecundario)
                             .padding(.top, 4)
 
@@ -547,7 +611,7 @@ struct DetalleReservaView: View {
                             Task { await pagar(r) }
                         } label: {
                             Text("Registrar el pago de otra forma")
-                                .font(.system(size: 11))
+                                .font(.caption)
                                 .foregroundStyle(Tema.textoSecundario)
                                 .frame(maxWidth: .infinity)
                         }
@@ -577,10 +641,10 @@ struct DetalleReservaView: View {
         Tarjeta {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Tu código de check-in")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.headline)
 
                 Text("Muéstralo en recepción al llegar.")
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(Tema.textoSecundario)
 
                 if let imagen = imagenReserva {
@@ -599,7 +663,7 @@ struct DetalleReservaView: View {
                 }
 
                 Text(r.codigo)
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(.subheadline.weight(.semibold).monospaced())
                     .frame(maxWidth: .infinity)
                     .foregroundStyle(Tema.textoSecundario)
             }
@@ -616,10 +680,10 @@ struct DetalleReservaView: View {
     private func fila(_ etiqueta: String, _ valor: String) -> some View {
         HStack {
             Text(etiqueta)
-                .font(.system(size: 11))
+                .font(.caption)
                 .foregroundStyle(Tema.textoSecundario)
             Spacer()
-            Text(valor).font(.system(size: 11, weight: .medium))
+            Text(valor).font(.caption.weight(.medium))
         }
     }
 

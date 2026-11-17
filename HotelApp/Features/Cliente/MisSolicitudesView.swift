@@ -23,12 +23,16 @@ struct MisSolicitudesView: View {
                                 mensaje: "Cuando pidas servicio a la habitación aparecerá aquí.")
                         .padding(.top, 30)
                 } else {
-                    ForEach(servicio.misSolicitudes) { solicitud in
-                        tarjeta(solicitud)
+                    LazyVStack(spacing: 12) {
+                        ForEach(servicio.misSolicitudes) { solicitud in
+                            tarjeta(solicitud)
+                        }
                     }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Mis pedidos")
@@ -54,45 +58,64 @@ struct MisSolicitudesView: View {
     }
 
     private func tarjeta(_ solicitud: SolicitudConsumo) -> some View {
-        Tarjeta {
+        let estado = etiquetaEstado(solicitud.estado)
+
+        return HStack(spacing: 0) {
+            Rectangle()
+                .fill(estado.color)
+                .frame(width: 4)
+
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(solicitud.codigo)
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(.caption.weight(.semibold).monospaced())
                             .foregroundStyle(Tema.textoSecundario)
                         if let creado = solicitud.creadoEn {
                             Text(FechaAPI.formatearConHora(FechaAPI.parsear(creado)))
-                                .font(.system(size: 10))
+                                .font(.caption2)
                                 .foregroundStyle(Tema.textoSecundario)
                         }
                     }
-                    Spacer()
-                    EtiquetaEstado(texto: etiquetaEstado(solicitud.estado).texto,
-                                   color: etiquetaEstado(solicitud.estado).color)
+
+                    Spacer(minLength: 8)
+
+                    EtiquetaEstado(texto: estado.texto, color: estado.color)
                 }
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(spacing: 6) {
                     ForEach(solicitud.items) { item in
-                        HStack {
-                            Text("\(item.cantidad)× \(item.productoNombre)")
-                                .font(.system(size: 12))
-                            Spacer()
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("\(item.cantidad)×")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Tema.azul)
+                                .frame(minWidth: 20, alignment: .leading)
+
+                            Text(item.productoNombre)
+                                .font(.subheadline)
+                                .foregroundStyle(Tema.texto)
+                                .lineLimit(1)
+
+                            Spacer(minLength: 8)
+
                             Text(Tema.soles(item.subtotal))
-                                .font(.system(size: 12))
+                                .font(.subheadline)
                                 .foregroundStyle(Tema.textoSecundario)
                         }
                     }
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 10)
+                .background(Tema.fondo)
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
 
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text("Total")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                     Spacer()
                     Text(Tema.soles(solicitud.total))
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.headline)
                         .foregroundStyle(Tema.azul)
                 }
 
@@ -110,18 +133,28 @@ struct MisSolicitudesView: View {
                     Button {
                         confirmandoCancelacion = solicitud
                     } label: {
-                        Text("Anular pedido")
-                            .font(.system(size: 12, weight: .semibold))
+                        Label("Anular pedido", systemImage: "xmark.circle")
+                            .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 9)
-                            .background(Tema.peligro.opacity(0.1))
+                            .frame(minHeight: 44)
+                            .background(Tema.peligro.opacity(0.10))
                             .foregroundStyle(Tema.peligro)
-                            .clipShape(RoundedRectangle(cornerRadius: 9))
+                            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                        style: .continuous))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(EstiloPresionable())
+                    .accessibilityLabel("Anular pedido \(solicitud.codigo)")
                 }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
     }
 
     private func etiquetaEstado(_ estado: String) -> (texto: String, color: Color) {

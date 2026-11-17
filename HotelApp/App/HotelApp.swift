@@ -13,6 +13,7 @@ struct HotelAppMain: App {
     @State private var reservas = ReservaStore()
     @State private var operacion = OperacionStore()
     @State private var servicio = ServicioStore()
+    @State private var sedeActiva = SedeActivaStore()
 
     init() {
         // Firebase se inicializa una sola vez por proceso.
@@ -30,6 +31,7 @@ struct HotelAppMain: App {
                 .environment(reservas)
                 .environment(operacion)
                 .environment(servicio)
+                .environment(sedeActiva)
                 .task { await sesion.restaurarSesion() }
                 // Los stores son propiedad de la App: aquí se limpian al
                 // pasar a "sin sesión" (logout manual o token revocado).
@@ -38,7 +40,6 @@ struct HotelAppMain: App {
                     limpiarStores()
                 }
                 .tint(Tema.azul)
-                .preferredColorScheme(.light)
         }
     }
 
@@ -52,6 +53,7 @@ struct HotelAppMain: App {
         operacion.limpiar()
         servicio.limpiar()
         catalogo.limpiar()
+        sedeActiva.limpiar()
     }
 }
 
@@ -82,7 +84,10 @@ struct RaizView: View {
                 SplashView()
 
             case .sinSesion:
+                // El login es neumórfico (blancos y sombras claras): se queda
+                // en claro aunque el resto de la app siga el modo del sistema.
                 LoginView()
+                    .preferredColorScheme(.light)
 
             case .autenticado(let usuario):
                 if usuario.puedeOperar || usuario.esHousekeeping {

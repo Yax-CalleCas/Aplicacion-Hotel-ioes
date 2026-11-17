@@ -28,8 +28,6 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
-	<key>UIUserInterfaceStyle</key>
-	<string>Light</string>
 
 	<!-- URL base de la API.
 	     Produccion: backend desplegado en Render con HTTPS.

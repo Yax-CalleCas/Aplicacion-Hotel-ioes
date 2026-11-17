@@ -79,50 +79,80 @@ struct ServicioHabitacionView: View {
 
     /// El servicio a la habitación exige estar alojado. Sin check-in no aplica.
     private var avisoSinEstadia: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Aviso(tipo: .info,
-                  titulo: "Necesitas estar alojado",
-                  mensaje: "El servicio a la habitación está disponible cuando has hecho el check-in y estás en tu habitación.")
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Tema.azul.opacity(0.10))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "door.left.hand.open")
+                        .font(.title2)
+                        .foregroundStyle(Tema.azul)
+                }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Label("¿Cómo funciona?", systemImage: "questionmark.circle")
-                    .font(.system(size: 13, weight: .semibold))
+                Text("Necesitas estar alojado")
+                    .font(.headline)
+                    .foregroundStyle(Tema.texto)
+
+                Text("El servicio a la habitación está disponible cuando has hecho "
+                     + "el check-in y estás en tu habitación.")
+                    .font(.subheadline)
                     .foregroundStyle(Tema.textoSecundario)
-
-                Text("1. Reserva tu habitación en la pestaña «Reservar».")
-                Text("2. En recepción te dan la llave y registran tu llegada (check-in).")
-                Text("3. Desde ese momento puedes pedir aquí.")
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .font(.system(size: 12))
-            .foregroundStyle(Tema.textoSecundario)
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Tema.superficie)
-            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+
+            Tarjeta {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("¿Cómo funciona?", systemImage: "questionmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Tema.azul)
+
+                    paso(1, "Reserva tu habitación en la pestaña «Reservar».")
+                    paso(2, "En recepción te dan la llave y registran tu llegada.")
+                    paso(3, "Desde ese momento puedes pedir aquí.")
+                }
+            }
 
             NavigationLink {
                 MisReservasView()
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "calendar")
-                    Text("Ver mis reservas")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(Tema.azul)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 11))
+                Label("Ver mis reservas", systemImage: "calendar")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 48)
+                    .background(Tema.azul)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(EstiloPresionable())
+        }
+    }
+
+    private func paso(_ numero: Int, _ texto: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(numero)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Tema.azul)
+                .frame(width: 22, height: 22)
+                .background(Tema.azul.opacity(0.12))
+                .clipShape(Circle())
+
+            Text(texto)
+                .font(.subheadline)
+                .foregroundStyle(Tema.textoSecundario)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private func seccion(categoria: String, productos: [Producto]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(tituloCategoria(categoria))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Tema.textoSecundario)
+                .font(.headline)
+                .foregroundStyle(Tema.texto)
 
             Tarjeta(padding: 0) {
                 VStack(spacing: 0) {
@@ -141,22 +171,22 @@ struct ServicioHabitacionView: View {
     private func filaProducto(_ producto: Producto) -> some View {
         HStack(spacing: 12) {
             Image(systemName: producto.icono)
-                .font(.system(size: 16))
+                .font(.subheadline)
                 .foregroundStyle(Tema.azul)
-                .frame(width: 34, height: 34)
-                .background(Tema.azulClaro)
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .frame(width: 38, height: 38)
+                .background(Tema.azul.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(producto.nombre)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Tema.texto)
                 Text(Tema.soles(producto.precio))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Tema.azul)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             selectorCantidad(producto)
         }
@@ -172,94 +202,106 @@ struct ServicioHabitacionView: View {
                 carrito[producto.id] = 1
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 34, height: 34)
                     .background(Tema.azul)
                     .clipShape(Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(EstiloPresionable())
+            .accessibilityLabel("Añadir \(producto.nombre)")
         } else {
             HStack(spacing: 10) {
-                botonCantidad("minus") {
+                botonCantidad("minus", etiqueta: "Quitar uno de \(producto.nombre)") {
                     if cantidad <= 1 { carrito.removeValue(forKey: producto.id) }
                     else { carrito[producto.id] = cantidad - 1 }
                 }
 
                 Text("\(cantidad)")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                     .frame(minWidth: 20)
+                    .contentTransition(.numericText())
 
-                botonCantidad("plus") {
+                botonCantidad("plus", etiqueta: "Añadir uno de \(producto.nombre)") {
                     carrito[producto.id] = cantidad + 1
                 }
             }
         }
     }
 
-    private func botonCantidad(_ icono: String, accion: @escaping () -> Void) -> some View {
+    private func botonCantidad(_ icono: String, etiqueta: String,
+                              accion: @escaping () -> Void) -> some View {
         Button(action: accion) {
             Image(systemName: icono)
-                .font(.system(size: 11, weight: .bold))
+                .font(.caption.weight(.bold))
                 .foregroundStyle(Tema.azul)
-                .frame(width: 26, height: 26)
-                .background(Tema.azulClaro)
+                .frame(width: 30, height: 30)
+                .background(Tema.azul.opacity(0.10))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(etiqueta)
     }
 
     private var campoObservaciones: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Observaciones (opcional)")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(Tema.textoSecundario)
 
             TextField("Ej. sin hielo, dejar en la puerta", text: $observaciones, axis: .vertical)
-                .font(.system(size: 13))
+                .font(.body)
                 .lineLimit(2...4)
-                .padding(10)
+                .padding(11)
                 .background(Tema.superficie)
-                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno))
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                     style: .continuous)
+                        .stroke(Tema.borde, lineWidth: 1))
         }
     }
 
     private var barraEnviar: some View {
-        VStack(spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("\(totalUnidades) \(totalUnidades == 1 ? "producto" : "productos")")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Tema.textoSecundario)
-                    Text(Tema.soles(total))
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(Tema.azul)
-                }
-
-                Spacer()
-
-                Button {
-                    Task { await enviar() }
-                } label: {
-                    HStack(spacing: 6) {
-                        if servicio.procesando {
-                            ProgressView().tint(.white)
-                        } else {
-                            Image(systemName: "paperplane.fill")
-                        }
-                        Text(servicio.procesando ? "Enviando..." : "Pedir")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 12)
-                    .background(Tema.azul)
-                    .foregroundStyle(.white)
-                    .clipShape(Capsule())
-                }
-                .disabled(servicio.procesando)
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(totalUnidades) \(totalUnidades == 1 ? "producto" : "productos")")
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+                Text(Tema.soles(total))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Tema.azul)
+                    .contentTransition(.numericText())
             }
+
+            Spacer(minLength: 0)
+
+            Button {
+                Task { await enviar() }
+            } label: {
+                HStack(spacing: 7) {
+                    if servicio.procesando {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    Text(servicio.procesando ? "Enviando..." : "Pedir")
+                        .font(.headline)
+                }
+                .padding(.horizontal, 24)
+                .frame(minHeight: 46)
+                .background(servicio.procesando ? Tema.azul.opacity(0.6) : Tema.azul)
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(EstiloPresionable())
+            .disabled(servicio.procesando)
+            .accessibilityLabel("Enviar pedido por \(Tema.soles(total))")
         }
-        .padding(14)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(.regularMaterial)
         .overlay(alignment: .top) { Divider() }
     }

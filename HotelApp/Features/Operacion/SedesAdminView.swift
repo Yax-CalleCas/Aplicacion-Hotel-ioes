@@ -52,38 +52,67 @@ struct SedesAdminView: View {
     private func tarjeta(_ sede: Sede) -> some View {
         Tarjeta(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                ImagenRemota(ruta: sede.imagenUrl, iconoRespaldo: "building.2", alto: 130)
+                ZStack(alignment: .bottomLeading) {
+                    ImagenRemota(ruta: sede.imagenUrl, iconoRespaldo: "building.2", alto: 150)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(sede.nombre)
-                            .font(.system(size: 15, weight: .semibold))
-                        Spacer()
-                        EtiquetaEstado(texto: sede.codigo, color: Tema.azul)
+                    LinearGradient(colors: [.clear, Color.black.opacity(0.55)],
+                                   startPoint: .center,
+                                   endPoint: .bottom)
+
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sede.codigo.uppercased())
+                                .font(.caption2.weight(.bold))
+                                .tracking(1.2)
+                                .foregroundStyle(.white.opacity(0.8))
+                            Text(sede.nombre)
+                                .font(.title3.weight(.bold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        EtiquetaEstado(texto: sede.activo ? "Activa" : "Inactiva",
+                                       color: sede.activo ? Tema.exito : Tema.peligro)
                     }
+                    .padding(14)
+                }
+                .frame(height: 150)
+                .frame(maxWidth: .infinity)
+                .clipped()
 
+                VStack(alignment: .leading, spacing: 8) {
                     if let direccion = sede.direccion {
                         Label("\(direccion)\(sede.ciudad.map { ", \($0)" } ?? "")",
                               systemImage: "mappin.and.ellipse")
-                            .font(.system(size: 11))
+                            .font(.caption)
+                            .foregroundStyle(Tema.textoSecundario)
+                            .lineLimit(2)
+                    }
+
+                    HStack(spacing: 14) {
+                        Label("In \(sede.checkInCorto)", systemImage: "arrow.down.right")
+                        Label("Out \(sede.checkOutCorto)", systemImage: "arrow.up.right")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(Tema.textoSecundario)
+
+                    if let telefono = sede.telefono {
+                        Label(telefono, systemImage: "phone")
+                            .font(.caption2)
                             .foregroundStyle(Tema.textoSecundario)
                     }
 
-                    Text("Check-in \(sede.checkInCorto) · Check-out \(sede.checkOutCorto)")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Tema.textoSecundario)
-
-                    HStack {
-                        if let telefono = sede.telefono {
-                            Label(telefono, systemImage: "phone")
-                                .font(.system(size: 10))
-                                .foregroundStyle(Tema.textoSecundario)
-                        }
-                        Spacer()
-                        Text("Editar foto →")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Tema.azul)
+                    HStack(spacing: 6) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.caption)
+                        Text("Editar datos y foto")
+                            .font(.caption.weight(.semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.semibold))
                     }
+                    .foregroundStyle(Tema.azul)
+                    .padding(.top, 4)
                 }
                 .padding(14)
             }
@@ -163,7 +192,7 @@ struct EditarSedeSheet: View {
 
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Foto de la sede")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
 
                                 // Subida directa desde la galería del iPhone.
                                 SelectorFoto(urlActual: imagenUrl.isEmpty ? nil : imagenUrl) { nueva in
@@ -171,17 +200,17 @@ struct EditarSedeSheet: View {
                                 }
 
                                 Text("O usa una de las fotos del catálogo:")
-                                    .font(.system(size: 10))
+                                    .font(.caption)
                                     .foregroundStyle(Tema.textoSecundario)
 
-                                HStack(spacing: 6) {
+                                HStack(spacing: 8) {
                                     ForEach(fotosSugeridas, id: \.0) { foto in
                                         Button(foto.0) {
                                             imagenUrl = foto.1
                                         }
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .padding(.horizontal, 9)
-                                        .padding(.vertical, 5)
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.horizontal, 12)
+                                        .frame(minHeight: 34)
                                         .background(Tema.azulClaro)
                                         .foregroundStyle(Tema.azul)
                                         .clipShape(Capsule())
