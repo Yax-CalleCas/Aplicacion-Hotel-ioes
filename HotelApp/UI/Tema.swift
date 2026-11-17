@@ -4,17 +4,17 @@ import SwiftUI
 enum Tema {
 
     // Colores de marca (azul profundo + dorado)
-    static let azul = Color(red: 0.04, green: 0.28, blue: 0.47)
-    static let azulOscuro = Color(red: 0.02, green: 0.16, blue: 0.29)
-    static let azulClaro = Color(red: 0.89, green: 0.94, blue: 0.98)
+    static let azul = Color(red: 0.05, green: 0.34, blue: 0.62)
+    static let azulOscuro = Color(red: 0.03, green: 0.14, blue: 0.29)
+    static let azulClaro = Color(red: 0.89, green: 0.94, blue: 0.99)
 
-    static let dorado = Color(red: 0.79, green: 0.60, blue: 0.18)
+    static let dorado = Color(red: 0.85, green: 0.65, blue: 0.22)
 
-    static let fondo = Color(red: 0.97, green: 0.97, blue: 0.97)
+    static let fondo = Color(red: 0.965, green: 0.972, blue: 0.984)
     static let superficie = Color.white
 
-    static let texto = Color(red: 0.09, green: 0.11, blue: 0.13)
-    static let textoSecundario = Color(red: 0.42, green: 0.45, blue: 0.48)
+    static let texto = Color(red: 0.08, green: 0.11, blue: 0.16)
+    static let textoSecundario = Color(red: 0.42, green: 0.47, blue: 0.55)
 
     // Paleta clara del login (estilo neumórfico).
     static let tinta = Color(red: 0.07, green: 0.10, blue: 0.20)
@@ -30,6 +30,24 @@ enum Tema {
 
     static let radio: CGFloat = 16
     static let radioPequeno: CGFloat = 10
+
+    // Tokens del panel: bordes, sombras y vidrio sobre fondo degradado.
+    static let borde = Color.black.opacity(0.06)
+    static let sombra = Color(red: 0.06, green: 0.16, blue: 0.30).opacity(0.10)
+
+    /// Degradado de marca para superficies protagonistas (hero del panel).
+    static let degradadoMarca = LinearGradient(
+        colors: [azulOscuro, azul],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing)
+
+    /// Degradado del acento dorado (anillo de ocupación, avatar).
+    static let degradadoDorado = LinearGradient(
+        colors: [Color(red: 0.98, green: 0.83, blue: 0.47),
+                 dorado,
+                 Color(red: 0.70, green: 0.51, blue: 0.12)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing)
 
     static func soles(_ valor: Decimal) -> String {
         let formatter = NumberFormatter()
@@ -57,7 +75,8 @@ struct Tarjeta<Contenido: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
-                    .stroke(Color.black.opacity(0.06), lineWidth: 1))
+                    .stroke(Tema.borde, lineWidth: 1))
+            .shadow(color: Tema.sombra.opacity(0.55), radius: 8, x: 0, y: 3)
     }
 }
 
