@@ -663,11 +663,19 @@ struct OperacionHomeView: View {
     // MARK: - Accesos rápidos
 
     private var accesos: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            tituloSeccion("Accesos rápidos", "bolt.fill", Tema.dorado)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Accesos rápidos")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Tema.texto)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10),
-                                     count: 3),
+            // Grid de 2 columnas: se ve todo sin scroll horizontal, que
+            // ocultaba accesos sin ninguna pista visual.
+            //
+            // No se repiten aquí "Habitaciones" ni "Tareas": ya son pestañas
+            // fijas del tab bar. Duplicarlas era parte de lo que se veía
+            // redundante.
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                GridItem(.flexible(), spacing: 10)],
                       spacing: 10) {
                 if esPanelCompleto {
                     Button {
@@ -705,28 +713,56 @@ struct OperacionHomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-
-            // Administración: antes solo se llegaba desde Perfil, lo que hacía
+             // Administración: antes solo se llegaba desde Perfil, lo que hacía
             // el "acceso total" poco descubrible desde el panel.
             if usuario.esAdmin {
-                tituloSeccion("Administración", "shield.lefthalf.filled", Tema.azulOscuro)
-                    .padding(.top, 8)
+                Text("Administración")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Tema.textoSecundario)
+                    .padding(.top, 6)
 
-                HStack(spacing: 10) {
-                    NavigationLink { UsuariosAdminView() } label: {
-                        atajoAncho("Usuarios y roles", "person.2.badge.gearshape",
-                                   Tema.azulOscuro)
-                    }
-                    .buttonStyle(.plain)
+                NavigationLink { SedesAdminView() } label: {
+                    HStack(spacing: 14) {
+                        RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                         style: .continuous)
+                            .fill(Tema.dorado.opacity(0.15))
+                            .frame(width: 42, height: 42)
+                            .overlay(
+                                Image(systemName: "building.2.fill")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(Tema.dorado))
 
-                    NavigationLink { SedesAdminView() } label: {
-                        atajoAncho("Sedes", "building.2", Tema.dorado)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sedes y fotos")
+                                .font(.headline)
+                                .foregroundStyle(Tema.texto)
+                            Text("Gestiona fotos y datos de cada sede")
+                                .font(.caption)
+                                .foregroundStyle(Tema.textoSecundario)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Tema.textoSecundario.opacity(0.6))
                     }
-                    .buttonStyle(.plain)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Tema.superficie)
+                    .clipShape(RoundedRectangle(cornerRadius: Tema.radio,
+                                                style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Tema.radio,
+                                         style: .continuous)
+                            .stroke(Tema.borde, lineWidth: 1))
+                    .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
                 }
-            }
-        }
-    }
+                               .buttonStyle(EstiloPresionable())
+                .accessibilityLabel("Sedes y fotos. Gestiona fotos y datos de cada sede")
+            }          // cierra if usuario.esAdmin
+        }              // cierra el VStack de accesos
+    }                  // cierra la var accesos
 
     /// Atajo vertical: icono grande en placa de color y etiqueta debajo.
     private func atajo(_ titulo: String, _ icono: String, _ color: Color) -> some View {

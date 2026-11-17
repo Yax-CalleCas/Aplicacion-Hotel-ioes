@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Perfil del usuario.
 ///
@@ -18,112 +19,51 @@ struct PerfilView: View {
             VStack(spacing: 16) {
                 cabecera
 
-                Tarjeta {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Datos de la cuenta")
-                            .font(.system(size: 13, weight: .semibold))
-
-                        fila("Nombre", usuario.nombre)
-                        fila("Correo", usuario.email)
-                        fila("Roles", usuario.nombresRol.joined(separator: ", "))
-                        if let sede = usuario.sedePrincipal {
-                            fila("Sede", sede.nombre)
-                        }
-                        if let telefono = usuario.telefono {
-                            fila("Teléfono", telefono)
-                        }
-                        if let ultimo = usuario.ultimoLogin {
-                            fila("Último acceso",
-                                 FechaAPI.formatearConHora(FechaAPI.parsear(ultimo)))
-                        }
-                    }
+                seccion("Datos de la cuenta") {
+                    filasCuenta
                 }
 
-                Tarjeta {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Seguridad")
-                            .font(.system(size: 13, weight: .semibold))
-
-                        Label("Token guardado en el Keychain de iOS",
-                              systemImage: "lock.shield")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Tema.textoSecundario)
-
-                        Label(biometriaDisponible
-                              ? "Face ID disponible"
-                              : "Face ID no configurado",
-                              systemImage: biometriaDisponible
-                              ? "faceid" : "faceid")
-                            .font(.system(size: 11))
-                            .foregroundStyle(biometriaDisponible
-                                             ? Tema.exito : Tema.textoSecundario)
-
-                        Button {
-                            Task { await abrirCambioPassword() }
-                        } label: {
-                            Label("Cambiar contraseña", systemImage: "key")
-                                .font(.system(size: 12, weight: .medium))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Tema.azulClaro)
-                                .foregroundStyle(Tema.azul)
-                                .clipShape(RoundedRectangle(cornerRadius: 9))
-                        }
-                    }
+                seccion("Seguridad") {
+                    seguridad
                 }
 
                 if sesion.esAdmin {
-                    Tarjeta {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Administración")
-                                .font(.system(size: 13, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Administración")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Tema.textoSecundario)
+                            .padding(.leading, 4)
 
-                            NavigationLink {
-                                UsuariosAdminView()
-                            } label: {
-                                Label("Gestionar usuarios", systemImage: "person.2.badge.gearshape")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 12)
-                                    .background(Tema.fondo)
-                                    .clipShape(RoundedRectangle(cornerRadius: 9))
-                            }
-                            .buttonStyle(.plain)
-
-                            NavigationLink {
-                                SedesAdminView()
-                            } label: {
-                                Label("Sedes y fotos", systemImage: "building.2")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 12)
-                                    .background(Tema.fondo)
-                                    .clipShape(RoundedRectangle(cornerRadius: 9))
-                            }
-                            .buttonStyle(.plain)
+                        NavigationLink {
+                            SedesAdminView()
+                        } label: {
+                            filaAdministracion
                         }
+                        .buttonStyle(EstiloPresionable())
+                        .accessibilityLabel("Sedes y fotos. Gestiona fotos y datos de cada sede")
                     }
                 }
 
-                Button(role: .destructive) {
-                    confirmarSalida = true
-                } label: {
-                    Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Tema.peligro.opacity(0.08))
-                        .foregroundStyle(Tema.peligro)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
                 Text("Hotel PMS · v2.0 · Piura, Perú")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundStyle(Tema.textoSecundario)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+        }
+        // El botón queda fijo sobre la tab bar: nunca se pierde al hacer scroll.
+        .safeAreaInset(edge: .bottom) {
+            botonSalir
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+                .background(.ultraThinMaterial)
+                .overlay(alignment: .top) {
+                    Divider().overlay(Tema.borde)
+                }
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Perfil")
@@ -144,43 +84,272 @@ struct PerfilView: View {
     // MARK: - Subvistas
 
     private var cabecera: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Tema.azulClaro)
-                    .frame(width: 84, height: 84)
+                    .fill(
+                        LinearGradient(colors: [Tema.azul, Tema.azulOscuro],
+                                       startPoint: .topLeading,
+                                       endPoint: .bottomTrailing))
+                    .frame(width: 78, height: 78)
+                    .shadow(color: Tema.azulOscuro.opacity(0.18),
+                            radius: 10, x: 0, y: 5)
 
-                Text(usuario.iniciales.isEmpty
-                     ? String(usuario.nombre.prefix(1)).uppercased()
-                     : usuario.iniciales)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(Tema.azulOscuro)
+                Text(inicialesUsuario)
+                    .font(.title.weight(.bold))
+                    .foregroundStyle(.white)
             }
 
-            Text(usuario.nombre)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+            VStack(spacing: 4) {
+                Text(usuario.nombre)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(Tema.texto)
+                    .multilineTextAlignment(.center)
 
-            Text(usuario.email)
-                .font(.system(size: 12))
-                .foregroundStyle(Tema.textoSecundario)
+                Text(usuario.email)
+                    .font(.subheadline)
+                    .foregroundStyle(Tema.textoSecundario)
+                    .multilineTextAlignment(.center)
+            }
 
-            EtiquetaEstado(texto: usuario.roles.first?.nombre ?? "—",
+            EtiquetaEstado(texto: rolPrincipal,
                            color: Tema.azul,
-                           icono: "person.badge.key")
+                           icono: "person.badge.key.fill")
         }
-        .padding(.vertical, 20)
+        .padding(.vertical, 22)
+        .frame(maxWidth: .infinity)
+        .background(
+            LinearGradient(colors: [Tema.azul.opacity(0.16),
+                                    Tema.superficie],
+                           startPoint: .top,
+                           endPoint: .bottom))
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(usuario.nombre), \(usuario.email), rol \(rolPrincipal)")
     }
 
-    private func fila(_ etiqueta: String, _ valor: String) -> some View {
-        HStack {
-            Text(etiqueta)
-                .font(.system(size: 12))
-                .foregroundStyle(Tema.textoSecundario)
-            Spacer()
-            Text(valor)
-                .font(.system(size: 12, weight: .medium))
-                .multilineTextAlignment(.trailing)
+    /// Datos de la cuenta como filas con icono y separadores finos.
+    private var filasCuenta: some View {
+        VStack(spacing: 0) {
+            ForEach(filas) { fila in
+                if fila.id != filas.first?.id {
+                    Divider().overlay(Tema.borde).padding(.leading, 34)
+                }
+                HStack(spacing: 12) {
+                    Image(systemName: fila.icono)
+                        .font(.subheadline)
+                        .foregroundStyle(Tema.azul)
+                        .frame(width: 22, alignment: .center)
+
+                    Text(fila.etiqueta)
+                        .font(.subheadline)
+                        .foregroundStyle(Tema.textoSecundario)
+
+                    Spacer(minLength: 12)
+
+                    Text(fila.valor)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Tema.texto)
+                        .multilineTextAlignment(.trailing)
+                }
+                .padding(.vertical, 10)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(fila.etiqueta): \(fila.valor)")
+            }
         }
+    }
+
+    /// Fila de dato con su icono SF Symbol.
+    private struct DatoCuenta: Identifiable {
+        let etiqueta: String
+        let valor: String
+        let icono: String
+
+        var id: String { etiqueta }
+    }
+
+    private var seguridad: some View {
+        VStack(spacing: 0) {
+            indicador(icono: "lock.shield.fill",
+                      color: Tema.exito,
+                      titulo: "Token en el Keychain",
+                      detalle: "Almacenado de forma segura en iOS")
+
+            Divider().overlay(Tema.borde).padding(.leading, 34)
+
+            indicador(icono: "faceid",
+                      color: biometriaDisponible ? Tema.azul : Tema.textoSecundario,
+                      titulo: biometriaDisponible ? "Face ID disponible" : "Face ID no configurado",
+                      detalle: biometriaDisponible
+                        ? "Se pide antes de acciones sensibles"
+                        : "Puedes activarlo en Ajustes")
+
+            Button {
+                Task { await abrirCambioPassword() }
+            } label: {
+                Label("Cambiar contraseña", systemImage: "key.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 44)
+                    .background(Tema.azul.opacity(0.10))
+                    .foregroundStyle(Tema.azul)
+                    .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 12)
+            .accessibilityLabel("Cambiar contraseña")
+        }
+    }
+
+    /// Fila grande tipo tarjeta para el único destino de administración.
+    private var filaAdministracion: some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: Tema.radioPequeno, style: .continuous)
+                .fill(Tema.dorado.opacity(0.15))
+                .frame(width: 46, height: 46)
+                .overlay(
+                    Image(systemName: "building.2.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Tema.dorado))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Sedes y fotos")
+                    .font(.headline)
+                    .foregroundStyle(Tema.texto)
+
+                Text("Gestiona fotos y datos de cada sede")
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Tema.textoSecundario.opacity(0.6))
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+    }
+
+    private var botonSalir: some View {
+        Button(role: .destructive) {
+            confirmarSalida = true
+        } label: {
+            Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 48)
+                .background(Tema.peligro.opacity(0.08))
+                .foregroundStyle(Tema.peligro)
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
+        }
+        .buttonStyle(EstiloPresionable())
+        .padding(.top, 4)
+        .accessibilityLabel("Cerrar sesión")
+    }
+
+    private func seccion<Contenido: View>(
+        _ titulo: String,
+        @ViewBuilder contenido: () -> Contenido
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(titulo)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Tema.textoSecundario)
+                .padding(.leading, 4)
+
+            Tarjeta {
+                contenido()
+            }
+        }
+    }
+
+    private func indicador(icono: String, color: Color,
+                           titulo: String, detalle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icono)
+                .font(.subheadline)
+                .foregroundStyle(color)
+                .frame(width: 22, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titulo)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Tema.texto)
+                Text(detalle)
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(titulo). \(detalle)")
+    }
+
+    // MARK: - Datos derivados
+
+    private var inicialesUsuario: String {
+        let limpias = usuario.iniciales.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !limpias.isEmpty { return limpias }
+        let primera = usuario.nombre
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .prefix(1)
+        return String(primera).uppercased()
+    }
+
+    private var rolPrincipal: String {
+        let rol = usuario.nombresRol.first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return rol.isEmpty ? "USUARIO" : rol
+    }
+
+    private var filas: [DatoCuenta] {
+        var resultado: [DatoCuenta] = [
+            DatoCuenta(etiqueta: "Nombre", valor: usuario.nombre, icono: "person.fill"),
+            DatoCuenta(etiqueta: "Correo", valor: usuario.email, icono: "envelope.fill"),
+        ]
+
+        let roles = usuario.nombresRol.joined(separator: ", ")
+        if !roles.isEmpty {
+            resultado.append(DatoCuenta(etiqueta: "Roles", valor: roles,
+                                        icono: "shield.lefthalf.filled"))
+        }
+
+        if let sede = usuario.sedePrincipal {
+            resultado.append(DatoCuenta(etiqueta: "Sede", valor: sede.nombre,
+                                        icono: "building.2.fill"))
+        }
+
+        if let telefono = usuario.telefono,
+           !telefono.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            resultado.append(DatoCuenta(etiqueta: "Teléfono", valor: telefono,
+                                        icono: "phone.fill"))
+        }
+
+        if let ultimo = usuario.ultimoLogin {
+            resultado.append(DatoCuenta(
+                etiqueta: "Último acceso",
+                valor: FechaAPI.formatearConHora(FechaAPI.parsear(ultimo)),
+                icono: "clock.fill"))
+        }
+
+        return resultado
     }
 
     // MARK: - Acciones
@@ -216,17 +385,29 @@ struct CambiarPasswordSheet: View {
 
     private let api = HotelAPI.shared
 
+    private var actualLimpia: String {
+        actual.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private var nuevaLimpia: String {
+        nueva.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    private var confirmarLimpia: String {
+        confirmar.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var valido: Bool {
-        actual.count >= 8 && nueva.count >= 8 && nueva == confirmar
+        actualLimpia.count >= 8 && nuevaLimpia.count >= 8
+            && nuevaLimpia == confirmarLimpia
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    campo("Contraseña actual", texto: $actual)
-                    campo("Nueva contraseña", texto: $nueva)
-                    campo("Confirmar nueva contraseña", texto: $confirmar)
+                    campo("Contraseña actual", texto: $actual, tipo: .password)
+                    campo("Nueva contraseña", texto: $nueva, tipo: .newPassword)
+                    campo("Confirmar nueva contraseña", texto: $confirmar,
+                          tipo: .newPassword)
 
                     if !confirmar.isEmpty && nueva != confirmar {
                         Aviso(tipo: .peligro, titulo: nil,
@@ -260,14 +441,19 @@ struct CambiarPasswordSheet: View {
         }
     }
 
-    private func campo(_ etiqueta: String, texto: Binding<String>) -> some View {
+    private func campo(_ etiqueta: String, texto: Binding<String>,
+                       tipo: UITextContentType) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(etiqueta).font(.system(size: 12, weight: .semibold))
+            Text(etiqueta)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Tema.texto)
             SecureField("Mínimo 8 caracteres", text: texto)
-                .textContentType(.newPassword)
+                .textContentType(tipo)
+                .font(.body)
                 .padding(11)
                 .background(Tema.fondo)
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
         }
     }
 

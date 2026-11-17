@@ -1,20 +1,37 @@
 import SwiftUI
+import UIKit
 
 /// Paleta y componentes del hotel.
 enum Tema {
 
     // Colores de marca (azul profundo + dorado)
-    static let azul = Color(red: 0.05, green: 0.34, blue: 0.62)
-    static let azulOscuro = Color(red: 0.03, green: 0.14, blue: 0.29)
-    static let azulClaro = Color(red: 0.89, green: 0.94, blue: 0.99)
+    static let azul = Color(red: 0.04, green: 0.28, blue: 0.47)
+    static let azulOscuro = Color(red: 0.02, green: 0.16, blue: 0.29)
+    static let azulClaro = adaptable(claro: UIColor(red: 0.89, green: 0.94, blue: 0.98, alpha: 1),
+                                     oscuro: UIColor(red: 0.10, green: 0.19, blue: 0.27, alpha: 1))
 
-    static let dorado = Color(red: 0.85, green: 0.65, blue: 0.22)
+    static let dorado = Color(red: 0.79, green: 0.60, blue: 0.18)
 
-    static let fondo = Color(red: 0.965, green: 0.972, blue: 0.984)
-    static let superficie = Color.white
+    // Neutros adaptables: en modo claro se ven igual que antes y en modo
+    // oscuro no hay tarjetas blancas sobre fondo blanco.
+    static let fondo = adaptable(claro: UIColor(white: 0.97, alpha: 1),
+                                 oscuro: UIColor(red: 0.07, green: 0.08, blue: 0.10, alpha: 1))
+    static let superficie = adaptable(claro: .white,
+                                      oscuro: UIColor(red: 0.12, green: 0.13, blue: 0.16, alpha: 1))
 
-    static let texto = Color(red: 0.08, green: 0.11, blue: 0.16)
-    static let textoSecundario = Color(red: 0.42, green: 0.47, blue: 0.55)
+    static let texto = adaptable(claro: UIColor(red: 0.09, green: 0.11, blue: 0.13, alpha: 1),
+                                 oscuro: UIColor(white: 0.95, alpha: 1))
+    static let textoSecundario = adaptable(claro: UIColor(white: 0.44, alpha: 1),
+                                           oscuro: UIColor(white: 0.66, alpha: 1))
+    /// Borde fino de tarjetas y separadores.
+    static let borde = adaptable(claro: UIColor(white: 0, alpha: 0.06),
+                                 oscuro: UIColor(white: 1, alpha: 0.12))
+
+    private static func adaptable(claro: UIColor, oscuro: UIColor) -> Color {
+        Color(uiColor: UIColor(dynamicProvider: { trazo in
+            trazo.userInterfaceStyle == .dark ? oscuro : claro
+        }))
+    }
 
     // Paleta clara del login (estilo neumórfico).
     static let tinta = Color(red: 0.07, green: 0.10, blue: 0.20)
@@ -28,26 +45,10 @@ enum Tema {
     static let peligro = Color(red: 0.72, green: 0.14, blue: 0.14)
     static let info = Color(red: 0.11, green: 0.36, blue: 0.60)
 
-    static let radio: CGFloat = 16
-    static let radioPequeno: CGFloat = 10
-
-    // Tokens del panel: bordes, sombras y vidrio sobre fondo degradado.
-    static let borde = Color.black.opacity(0.06)
-    static let sombra = Color(red: 0.06, green: 0.16, blue: 0.30).opacity(0.10)
-
-    /// Degradado de marca para superficies protagonistas (hero del panel).
-    static let degradadoMarca = LinearGradient(
-        colors: [azulOscuro, azul],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing)
-
-    /// Degradado del acento dorado (anillo de ocupación, avatar).
-    static let degradadoDorado = LinearGradient(
-        colors: [Color(red: 0.98, green: 0.83, blue: 0.47),
-                 dorado,
-                 Color(red: 0.70, green: 0.51, blue: 0.12)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing)
+    static let radio: CGFloat = 20
+    static let radioPequeno: CGFloat = 12
+    /// Sombra suave común a tarjetas.
+    static let colorSombra = Color.black.opacity(0.06)
 
     static func soles(_ valor: Decimal) -> String {
         let formatter = NumberFormatter()
@@ -76,7 +77,7 @@ struct Tarjeta<Contenido: View>: View {
             .overlay(
                 RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
                     .stroke(Tema.borde, lineWidth: 1))
-            .shadow(color: Tema.sombra.opacity(0.55), radius: 8, x: 0, y: 3)
+            .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
     }
 }
 
@@ -88,9 +89,9 @@ struct EtiquetaEstado: View {
     var body: some View {
         HStack(spacing: 4) {
             if let icono {
-                Image(systemName: icono).font(.system(size: 10, weight: .bold))
+                Image(systemName: icono).font(.caption2.weight(.bold))
             }
-            Text(texto).font(.system(size: 11, weight: .semibold))
+            Text(texto).font(.caption.weight(.semibold))
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
@@ -135,10 +136,10 @@ struct Aviso: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 if let titulo {
-                    Text(titulo).font(.system(size: 13, weight: .semibold))
+                    Text(titulo).font(.subheadline.weight(.semibold))
                 }
                 Text(mensaje)
-                    .font(.system(size: 12))
+                    .font(.footnote)
                     .foregroundStyle(Tema.textoSecundario)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -169,14 +170,15 @@ struct BotonPrincipal: View {
                     Image(systemName: icono)
                 }
                 Text(cargando ? "Procesando..." : titulo)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.headline)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(deshabilitado || cargando ? Tema.azul.opacity(0.45) : Tema.azul)
             .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno, style: .continuous))
         }
+        .buttonStyle(.plain)
         .disabled(deshabilitado || cargando)
     }
 }
@@ -189,11 +191,11 @@ struct EstadoVacio: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icono)
-                .font(.system(size: 34))
+                .font(.largeTitle)
                 .foregroundStyle(Tema.azul.opacity(0.5))
-            Text(titulo).font(.system(size: 16, weight: .semibold))
+            Text(titulo).font(.headline)
             Text(mensaje)
-                .font(.system(size: 13))
+                .font(.subheadline)
                 .foregroundStyle(Tema.textoSecundario)
                 .multilineTextAlignment(.center)
         }
@@ -201,6 +203,10 @@ struct EstadoVacio: View {
         .frame(maxWidth: .infinity)
         .background(Tema.superficie)
         .clipShape(RoundedRectangle(cornerRadius: Tema.radio))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
     }
 }
 
@@ -258,5 +264,16 @@ enum Etiquetas {
         case "VERIFICADA": return ("Verificada", Tema.textoSecundario)
         default: return (estado, Tema.textoSecundario)
         }
+    }
+}
+
+// MARK: - Estilos
+
+/// Feedback táctil sutil: escala 0.97 al presionar.
+struct EstiloPresionable: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.snappy(duration: 0.18), value: configuration.isPressed)
     }
 }

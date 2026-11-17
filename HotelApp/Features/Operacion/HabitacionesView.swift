@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Tablero de habitaciones por estado (recepción, admin).
 ///
@@ -16,150 +17,296 @@ struct HabitacionesView: View {
 
     private var sedeId: Int? { sesion.sedePrincipal?.id }
 
-    private let filtros: [(String?, String)] = [
-        (nil, "Todas"),
-        ("DISPONIBLE", "Disponibles"),
-        ("OCUPADA", "Ocupadas"),
-        ("LIMPIEZA", "Limpieza"),
-        ("MANTENIMIENTO", "Mantenimiento"),
-        ("FUERA_SERVICIO", "Fuera"),
+    /// Filtro del tablero. `estado == nil` es "Todas".
+    private struct FiltroHabitacion: Identifiable {
+        let estado: String?
+        let titulo: String
+        let icono: String
+
+        var id: String { titulo }
+    }
+
+    private let filtros: [FiltroHabitacion] = [
+        FiltroHabitacion(estado: nil, titulo: "Todas", icono: "square.grid.2x2"),
+        FiltroHabitacion(estado: "DISPONIBLE", titulo: "Disponibles",
+                         icono: "checkmark.circle"),
+        FiltroHabitacion(estado: "OCUPADA", titulo: "Ocupadas", icono: "person.fill"),
+        FiltroHabitacion(estado: "LIMPIEZA", titulo: "Limpieza", icono: "sparkles"),
+        FiltroHabitacion(estado: "MANTENIMIENTO", titulo: "Mantenimiento",
+                         icono: "wrench.and.screwdriver"),
+        FiltroHabitacion(estado: "FUERA_SERVICIO", titulo: "Fuera",
+                         icono: "exclamationmark.octagon"),
     ]
+
+    private var cargandoInicial: Bool {
+        operacion.cargando && operacion.habitaciones == nil
+    }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: 16) {
                 if let resumen = operacion.habitaciones?.resumen {
                     resumenGrid(resumen)
+                } else if cargandoInicial {
+                    resumenGridPlaceholder
                 }
 
                 filtrosScroll
 
-                if operacion.cargando && operacion.habitaciones == nil {
-                    ProgressView().padding(.top, 40)
-                } else if let lista = operacion.habitaciones, lista.habitaciones.isEmpty {
-                    EstadoVacio(icono: "bed.double",
-                                titulo: "Sin habitaciones",
-                                mensaje: "No hay habitaciones con ese filtro.")
-                } else if let lista = operacion.habitaciones {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)],
-                              spacing: 10) {
-                        ForEach(lista.habitaciones) { h in
-                            Button {
-                                seleccionada = h
-                            } label: {
-                                tarjeta(h)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
+                contenido
 
                 if let error {
                     Aviso(tipo: .peligro, titulo: "Error", mensaje: error)
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Habitaciones")
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await cargar() }
+        .refreshable { await recargar(forzar: true) }
         .task { await cargar() }
         .sheet(item: $seleccionada) { h in
             DetalleHabitacionSheet(
                 habitacion: h,
                 sedeId: sedeId ?? 0,
                 puedeCambiarEstado: sesion.esAdmin,
-                alActualizar: { await cargar() })
+                alActualizar: { await recargar(forzar: true) })
         }
     }
+
+    // MARK: - Contenido
+
+    @ViewBuilder
+    private var contenido: some View {
+        if cargandoInicial {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)],
+                      spacing: 12) {
+                ForEach(0..<6, id: \.self) { _ in
+                    Tarjeta(padding: 14) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("000").font(.title2.weight(.bold))
+                            Text("Categoría").font(.caption)
+                            Text("Piso 0").font(.caption2)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(height: 84, alignment: .leading)
+                    }
+                }
+            }
+            .redacted(reason: .placeholder)
+            .allowsHitTesting(false)
+        } else if let lista = operacion.habitaciones, lista.habitaciones.isEmpty {
+            EstadoVacio(icono: "bed.double",
+                        titulo: "Sin habitaciones",
+                        mensaje: "No hay habitaciones con ese filtro.")
+        } else if let lista = operacion.habitaciones {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)],
+                      spacing: 12) {
+                ForEach(lista.habitaciones) { h in
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        seleccionada = h
+                    } label: {
+                        tarjeta(h)
+                    }
+                    .buttonStyle(EstiloPresionable())
+                    .accessibilityLabel(accessibilityTarjeta(h))
+                }
+            }
+            .animation(.snappy(duration: 0.25), value: lista.habitaciones)
+        }
+    }
+
+    // MARK: - Resumen
 
     private func resumenGrid(_ r: ResumenEstados) -> some View {
-        HStack(spacing: 8) {
-            resumenItem("\(r.total)", "Total", Tema.textoSecundario)
-            resumenItem("\(r.disponibles)", "Libres", Tema.exito)
-            resumenItem("\(r.ocupadas)", "Ocup.", Tema.azul)
-            resumenItem("\(r.limpieza)", "Limp.", Tema.info)
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                            GridItem(.flexible(), spacing: 8),
+                            GridItem(.flexible(), spacing: 8)],
+                  spacing: 8) {
+            resumenItem(valor: r.total, titulo: "Total",
+                        icono: "square.grid.2x2.fill", color: Tema.azulOscuro)
+            resumenItem(valor: r.disponibles, titulo: "Libres",
+                        icono: "checkmark.circle.fill", color: Tema.exito)
+            resumenItem(valor: r.ocupadas, titulo: "Ocupadas",
+                        icono: "person.fill", color: Tema.azul)
+            resumenItem(valor: r.limpieza, titulo: "Limpieza",
+                        icono: "sparkles", color: Tema.info)
+            resumenItem(valor: r.mantenimiento + r.fueraServicio,
+                        titulo: "Mant./Fuera",
+                        icono: "wrench.and.screwdriver.fill", color: Tema.alerta)
         }
     }
 
-    private func resumenItem(_ valor: String, _ titulo: String, _ color: Color) -> some View {
+    /// Mismo alto que la rejilla real: evita el salto al terminar de cargar.
+    private var resumenGridPlaceholder: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8),
+                            GridItem(.flexible(), spacing: 8),
+                            GridItem(.flexible(), spacing: 8)],
+                  spacing: 8) {
+            ForEach(0..<5, id: \.self) { _ in
+                Tarjeta(padding: 10) {
+                    VStack(spacing: 4) {
+                        Image(systemName: "circle").font(.footnote)
+                            .foregroundStyle(Tema.textoSecundario)
+                        Text("0").font(.title3.weight(.bold))
+                        Text("Métrica").font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .redacted(reason: .placeholder)
+        .allowsHitTesting(false)
+    }
+
+    private func resumenItem(valor: Int, titulo: String,
+                             icono: String, color: Color) -> some View {
         Tarjeta(padding: 10) {
-            VStack(spacing: 2) {
-                Text(valor)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+            VStack(spacing: 4) {
+                Image(systemName: icono)
+                    .font(.footnote)
                     .foregroundStyle(color)
+
+                Text("\(valor)")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(color)
+                    .contentTransition(.numericText())
+
                 Text(titulo)
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundStyle(Tema.textoSecundario)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(titulo): \(valor)")
     }
+
+    // MARK: - Filtros
 
     private var filtrosScroll: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(filtros, id: \.1) { f in
+                ForEach(filtros) { f in
+                    let activo = filtro == f.estado
                     Button {
-                        filtro = f.0
-                        Task { await cargar() }
+                        // Tocar el filtro ya activo no recarga nada.
+                        guard !activo else { return }
+                        filtro = f.estado
+                        Task { await recargar(forzar: true) }
                     } label: {
-                        Text(f.1)
-                            .font(.system(size: 12, weight: .semibold))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(filtro == f.0 ? Tema.azul : Tema.superficie)
-                            .foregroundStyle(filtro == f.0 ? .white : Tema.texto)
-                            .clipShape(Capsule())
+                        HStack(spacing: 6) {
+                            Image(systemName: f.icono)
+                                .font(.caption2.weight(.semibold))
+                            Text(f.titulo)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 44)
+                        .background(activo ? Tema.azul : Tema.superficie)
+                        .foregroundStyle(activo ? Color.white : Tema.texto)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().stroke(activo ? Color.clear : Tema.borde,
+                                             lineWidth: 1))
                     }
+                    .buttonStyle(.plain)
+                    .animation(.snappy(duration: 0.2), value: activo)
+                    .accessibilityLabel("Filtro \(f.titulo)")
+                    .accessibilityAddTraits(activo ? AccessibilityTraits.isSelected : AccessibilityTraits())
                 }
             }
+            .padding(.vertical, 2)
         }
     }
+
+    // MARK: - Tarjeta
 
     private func tarjeta(_ h: Habitacion) -> some View {
         let estado = Etiquetas.estadoHabitacion(h.estado)
 
-        return Tarjeta(padding: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
+        return HStack(spacing: 0) {
+            // Franja lateral del color de estado.
+            Rectangle()
+                .fill(estado.color)
+                .frame(width: 4)
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(h.numero)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                    Spacer()
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(Tema.texto)
+                    Spacer(minLength: 0)
                     Circle()
                         .fill(estado.color)
                         .frame(width: 8, height: 8)
                 }
 
                 Text(h.categoriaNombre)
-                    .font(.system(size: 10))
+                    .font(.caption)
                     .foregroundStyle(Tema.textoSecundario)
                     .lineLimit(1)
 
-                Text("Piso \(h.pisoNumero)")
-                    .font(.system(size: 9))
-                    .foregroundStyle(Tema.textoSecundario)
+                HStack(spacing: 8) {
+                    Label("Piso \(h.pisoNumero)", systemImage: "building.2")
+                    Label("\(h.capacidadAdultos)", systemImage: "person.fill")
+                }
+                .font(.caption2)
+                .foregroundStyle(Tema.textoSecundario)
+                .labelStyle(.titleAndIcon)
 
                 Text(estado.texto)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(estado.color)
+                    .lineLimit(1)
 
                 if !h.activo {
                     Text("Inactiva")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(Tema.peligro)
                 }
             }
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
     }
 
+    private func accessibilityTarjeta(_ h: Habitacion) -> String {
+        let estado = Etiquetas.estadoHabitacion(h.estado)
+        return "Habitación \(h.numero), \(h.categoriaNombre), "
+            + "piso \(h.pisoNumero), \(estado.texto)"
+    }
+
+    // MARK: - Carga
+
     private func cargar() async {
+        await recargar(forzar: true)
+    }
+
+    /// Recarga el tablero. `forzar == false` evita repetir la petición cuando
+    /// ya hay datos de la misma sede y filtro (por ejemplo, al cambiar de
+    /// pestaña y volver).
+    private func recargar(forzar: Bool) async {
         guard let sedeId else {
             error = "No tienes sede asignada."
             return
         }
+        guard forzar || operacion.habitaciones == nil else { return }
+
         error = nil
         await operacion.cargarHabitaciones(sedeId: sedeId, estado: filtro)
         if operacion.error != nil { error = operacion.error }
@@ -197,56 +344,25 @@ struct DetalleHabitacionSheet: View {
         catalogo.categorias.first { $0.id == habitacion.categoriaId }
     }
 
+    private var motivoLimpio: String {
+        motivo.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var incidenciaLimpia: String {
+        incidencia.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    Tarjeta(padding: 0) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ImagenRemota(
-                                ruta: catalogo.fotoCategoria(habitacion.categoriaNombre,
-                                                             url: categoria?.imagenUrl),
-                                iconoRespaldo: "bed.double.fill",
-                                alto: 170)
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text("Habitación \(habitacion.numero)")
-                                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    Spacer()
-                                    let estado = Etiquetas.estadoHabitacion(habitacion.estado)
-                                    EtiquetaEstado(texto: estado.texto, color: estado.color)
-                                }
-
-                                Text(habitacion.categoriaNombre)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Tema.textoSecundario)
-
-                                Label("Piso \(habitacion.pisoNumero)", systemImage: "building.2")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Tema.textoSecundario)
-
-                                Label("\(habitacion.capacidadAdultos) adulto(s) + \(habitacion.capacidadNinos) niño(s)",
-                                      systemImage: "person.2")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Tema.textoSecundario)
-
-                                if let motivoBloqueo = habitacion.motivoBloqueo,
-                                   !motivoBloqueo.isEmpty {
-                                    Label(motivoBloqueo, systemImage: "exclamationmark.triangle")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Tema.alerta)
-                                }
-                            }
-                            .padding(14)
-                        }
-                    }
+                    cabecera
 
                     if puedeCambiarEstado && !habitacion.estaOcupada {
                         Tarjeta {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Cambiar estado")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.headline)
 
                                 Picker("Estado", selection: $estadoDestino) {
                                     Text("Disponible").tag("DISPONIBLE")
@@ -254,20 +370,29 @@ struct DetalleHabitacionSheet: View {
                                     Text("Fuera de servicio").tag("FUERA_SERVICIO")
                                 }
                                 .pickerStyle(.segmented)
+                                .onChange(of: estadoDestino) { _, _ in
+                                    // El motivo pertenece al estado anterior.
+                                    motivo = ""
+                                    error = nil
+                                }
 
                                 if estadoDestino != "DISPONIBLE" {
                                     TextField("Motivo (aire acondicionado, pintura...)",
                                               text: $motivo, axis: .vertical)
                                         .lineLimit(1...3)
-                                        .font(.system(size: 12))
+                                        .font(.body)
                                         .padding(9)
                                         .background(Tema.fondo)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .clipShape(RoundedRectangle(
+                                            cornerRadius: Tema.radioPequeno,
+                                            style: .continuous))
                                 }
 
                                 BotonPrincipal(titulo: "Aplicar cambio",
                                                icono: "arrow.triangle.2.circlepath",
-                                               cargando: procesando) {
+                                               cargando: procesando,
+                                               deshabilitado: estadoDestino != "DISPONIBLE"
+                                                && motivoLimpio.isEmpty) {
                                     Task { await cambiarEstado() }
                                 }
                             }
@@ -276,25 +401,26 @@ struct DetalleHabitacionSheet: View {
                         Tarjeta {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Reportar incidencia")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.headline)
 
                                 Text("Se registra en mantenimiento con prioridad normal.")
-                                    .font(.system(size: 10))
+                                    .font(.caption)
                                     .foregroundStyle(Tema.textoSecundario)
 
                                 TextField("Describe el problema...",
                                           text: $incidencia, axis: .vertical)
                                     .lineLimit(1...3)
-                                    .font(.system(size: 12))
+                                    .font(.body)
                                     .padding(9)
                                     .background(Tema.fondo)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(RoundedRectangle(
+                                        cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
 
                                 BotonPrincipal(titulo: "Enviar incidencia",
                                                icono: "wrench.and.screwdriver",
                                                cargando: reportando,
-                                               deshabilitado: incidencia
-                                                .trimmingCharacters(in: .whitespaces).isEmpty) {
+                                               deshabilitado: incidenciaLimpia.isEmpty) {
                                     Task { await enviarIncidencia() }
                                 }
                             }
@@ -322,11 +448,83 @@ struct DetalleHabitacionSheet: View {
                 }
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
+
+    private var cabecera: some View {
+        let estado = Etiquetas.estadoHabitacion(habitacion.estado)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .bottom) {
+                ImagenRemota(
+                    ruta: catalogo.fotoCategoria(habitacion.categoriaNombre,
+                                                 url: categoria?.imagenUrl),
+                    iconoRespaldo: "bed.double.fill",
+                    alto: 180)
+
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.55)],
+                    startPoint: .center,
+                    endPoint: .bottom)
+
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Habitación")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.8))
+                        Text(habitacion.numero)
+                            .font(.largeTitle.weight(.bold))
+                            .foregroundStyle(.white)
+                    }
+                    Spacer(minLength: 8)
+                    EtiquetaEstado(texto: estado.texto,
+                                   color: estado.color,
+                                   icono: "circle.fill")
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(height: 180)
+            .frame(maxWidth: .infinity)
+            .clipped()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(habitacion.categoriaNombre)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Tema.texto)
+
+                HStack(spacing: 14) {
+                    Label("Piso \(habitacion.pisoNumero)", systemImage: "building.2")
+                    Label("\(habitacion.capacidadAdultos) adulto(s) + \(habitacion.capacidadNinos) niño(s)",
+                          systemImage: "person.2")
+                }
+                .font(.caption)
+                .foregroundStyle(Tema.textoSecundario)
+
+                if let motivoBloqueo = habitacion.motivoBloqueo,
+                   !motivoBloqueo.isEmpty {
+                    Label(motivoBloqueo, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(Tema.alerta)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+        }
+        .background(Tema.superficie)
+        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
+                .stroke(Tema.borde, lineWidth: 1))
+        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
+    }
+
+    // MARK: - Acciones
 
     private func cambiarEstado() async {
         guard sedeId != 0 else { return }
-        if estadoDestino != "DISPONIBLE" && motivo.trimmingCharacters(in: .whitespaces).isEmpty {
+        if estadoDestino != "DISPONIBLE" && motivoLimpio.isEmpty {
             error = "Indica el motivo del bloqueo."
             return
         }
@@ -338,7 +536,7 @@ struct DetalleHabitacionSheet: View {
             try await operacion.cambiarEstado(
                 habitacionId: habitacion.id,
                 estado: estadoDestino,
-                motivo: estadoDestino == "DISPONIBLE" ? nil : motivo,
+                motivo: estadoDestino == "DISPONIBLE" ? nil : motivoLimpio,
                 sedeId: sedeId)
             await alActualizar()
             dismiss()
@@ -353,7 +551,7 @@ struct DetalleHabitacionSheet: View {
 
     /// Registra una incidencia de mantenimiento desde la habitación.
     private func enviarIncidencia() async {
-        let descripcion = incidencia.trimmingCharacters(in: .whitespaces)
+        let descripcion = incidenciaLimpia
         guard !descripcion.isEmpty else { return }
 
         reportando = true
