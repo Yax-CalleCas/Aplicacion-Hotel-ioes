@@ -13,15 +13,36 @@ App nativa del PMS hotelero. Consume la API de **Render**:
 
 ## Arranque en Mac
 
+El `HotelApp.xcodeproj` **está versionado en el repositorio**: basta con clonar
+y abrir. No hace falta instalar nada.
+
 ```bash
-# 1) Instalar XcodeGen (una sola vez)
-brew install xcodegen
-
-# 2) Generar el proyecto Xcode
-xcodegen generate
-
-# 3) Abrir en Xcode
+git clone <repo>
+cd ios-hotel
 open HotelApp.xcodeproj
+```
+
+### Si añades, renombras o borras archivos
+
+`project.yml` es la fuente de verdad del proyecto. Tras cualquier cambio en la
+estructura de carpetas hay que regenerar y commitear el `.xcodeproj`:
+
+```bash
+xcodegen generate
+git add HotelApp.xcodeproj project.yml
+git commit -m "Regenera proyecto"
+```
+
+XcodeGen se instala sin permisos de administrador (sin Homebrew):
+
+```bash
+mkdir -p ~/bin && cd /tmp
+curl -L -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip
+unzip -o xcodegen.zip -d ~/bin
+chmod +x ~/bin/xcodegen/bin/xcodegen
+xattr -d com.apple.quarantine ~/bin/xcodegen/bin/xcodegen 2>/dev/null
+echo 'export PATH="$HOME/bin/xcodegen/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ## Configuración

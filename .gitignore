@@ -19,12 +19,16 @@ xcuserdata/
 *.xcscmblueprint
 *.xcmarkingstring
 DerivedData/
-*.xcodeproj/
-*.xcworkspace/
 
-# ── XcodeGen ────────────────────────────────────────────────────────────────
-# Se regenera con: xcodegen generate
-HotelApp.xcodeproj/
+# ── Proyecto de Xcode ───────────────────────────────────────────────────────
+# SÍ se versiona: hay varias Macs en el equipo y no todas pueden ejecutar
+# xcodegen (el instituto no permite instalar binarios). Con el proyecto en el
+# repo, un `git clone` compila sin pasos extra.
+#
+# Sigue ignorándose lo que es de cada máquina (xcuserdata/ arriba) y lo
+# generado por SwiftPM.
+HotelApp.xcodeproj/xcshareddata/xcschemes/xcschememanagement.plist
+*.xcworkspace/
 
 # ── Swift Package Manager ───────────────────────────────────────────────────
 # Package.resolved SÍ se versiona para fijar versiones de Firebase/Facebook.
