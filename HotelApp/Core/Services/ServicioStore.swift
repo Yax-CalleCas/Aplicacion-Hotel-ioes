@@ -33,6 +33,10 @@ final class ServicioStore {
     /// aplica. Se muestra como aviso informativo, no como error.
     private(set) var sinEstadiaActiva = false
 
+    /// Nueva bandera: hay estancia activa para este cliente.
+    /// Se pobla al cargar la vista y determina si muestra el botón "Pedir".
+    private(set) var estanciaActiva: Estadia?
+
     private let api = HotelAPI.shared
 
     // MARK: - Catalogo
@@ -97,7 +101,7 @@ final class ServicioStore {
             // 409 SIN_ESTADIA_ACTIVA: no es un fallo, es que no hay estancia.
             if apiError.motivo == "SIN_ESTADIA_ACTIVA" {
                 sinEstadiaActiva = true
-                self.error = nil
+                estanciaActiva = nil
             } else {
                 self.error = apiError.mensajeUsuario
             }
@@ -205,6 +209,34 @@ final class ServicioStore {
         procesando = false
         cargandoCatalogo = false
         sinEstadiaActiva = false
+        estanciaActiva = nil
         error = nil
+    }
+
+    // MARK: - Check-in activo (nuevo)
+
+    /// Consulta al backend si hay una estancia activa para el usuario autenticado.
+    /// Actualiza `estanciaActiva` y `sinEstadiaActiva` según el resultado.
+    func cargarEstanciaActiva() async {
+        sinEstadiaActiva = false
+        estanciaActiva = nil
+
+        do {
+            let estadias = try await api.estadiasActivas()
+            // Tomamos la primera estancia activa (asumiendo un usuario único por dispositivo).
+            if let estancia = estadias.first(where: { $0.activa }) {
+                estanciaActiva = estancia
+                sinEstadiaActiva = false
+            } else {
+                sinEstadiaActiva = true
+            }
+        } catch let apiError as APIError {
+            // Si el backend devuelve 404/sin datos, tratamos como "no hay estancia activa aún".
+            sinEstadiaActiva = true
+            estanciaActiva = nil
+        } catch {
+            sinEstadiaActiva = true
+            estanciaActiva = nil
+        }
     }
 }
