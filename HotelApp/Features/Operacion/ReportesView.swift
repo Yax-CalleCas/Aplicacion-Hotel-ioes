@@ -81,7 +81,9 @@ struct ReportesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             if sedeId == 0 {
-                sedeId = usuario.map { sedeActiva.idEfectivo(para: $0) } ?? 0
+                if let usuario {
+                    sedeId = sedeActiva.idEfectivo(para: usuario) ?? 0
+                }
             }
             if kpi == nil { await cargar() }
         }
