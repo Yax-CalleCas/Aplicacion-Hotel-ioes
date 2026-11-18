@@ -223,3 +223,50 @@ enum ResultadoLogin {
     case fallo(mensaje: String, intentosRestantes: Int?, motivo: String?)
     case bloqueado(segundos: Int, mensaje: String)
 }
+
+// MARK: - Sede activa compartida
+
+/// Sede activa compartida por toda la app (panel, habitaciones, reportes).
+///
+/// Antes cada pantalla guardaba su propia sede: cambiabas a Piura en el panel
+/// y Habitaciones seguía mostrando Lima. Con un único origen de verdad, el
+/// cambio se propaga a todas las pestañas.
+///
+/// Vive en este archivo —y no en uno propio— porque el `.xcodeproj` está en
+/// `.gitignore`: al clonar, cualquier archivo nuevo queda fuera del proyecto
+/// hasta que alguien añada la referencia a mano. `SesionStore.swift` ya existe
+/// en todos los clones, así que aquí el tipo está siempre disponible.
+@MainActor
+@Observable
+final class SedeActivaStore {
+
+    /// Sede elegida. `nil` significa "la sede principal del usuario".
+    private(set) var sedeId: Int?
+
+    /// Devuelve la sede efectiva para un usuario, aplicando el valor por
+    /// defecto cuando aún no hay elección o la elegida ya no existe.
+    func efectiva(para usuario: Usuario) -> Sede? {
+        guard let sedeId else { return usuario.sedePrincipal }
+        return usuario.sedes.first { $0.id == sedeId } ?? usuario.sedePrincipal
+    }
+
+    /// Id efectivo, útil para las llamadas a la API.
+    func idEfectivo(para usuario: Usuario) -> Int? {
+        efectiva(para: usuario)?.id
+    }
+
+    /// Cambia la sede. Ignora el toque si ya está activa, para no recargar.
+    /// Devuelve `true` si hubo cambio real.
+    @discardableResult
+    func seleccionar(_ id: Int, para usuario: Usuario) -> Bool {
+        guard id != idEfectivo(para: usuario) else { return false }
+        guard usuario.sedes.contains(where: { $0.id == id }) else { return false }
+        sedeId = id
+        return true
+    }
+
+    /// Al cerrar sesión: la sede de una cuenta no debe arrastrarse a otra.
+    func limpiar() {
+        sedeId = nil
+    }
+}
