@@ -50,7 +50,7 @@ struct ServicioHabitacionView: View {
             if !carrito.isEmpty && !servicio.sinEstadiaActiva { barraEnviar }
         }
         .task {
-            await servicio.cargarEstanciaActiva()
+            await servicio.cargarEstadiaActiva()
             await servicio.cargarCatalogo()
             servicio.limpiarError()
         }
