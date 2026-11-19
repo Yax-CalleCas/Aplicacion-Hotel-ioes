@@ -43,7 +43,9 @@ const archivos = listar(APP).filter(
 );
 
 // --- Agrupar por carpeta para reproducir el árbol en Xcode ---------------
-const grupos = new Map(); // ruta relativa -> { nombre, hijos:Set, archivos:[] }
+// La clave '' es el grupo raíz (HotelApp). Sin él, las carpetas de primer
+// nivel nunca se enlazan y Xcode busca todos los .swift en la raíz.
+const grupos = new Map([['', { nombre: 'HotelApp', hijos: new Set(), archivos: [] }]]);
 
 function registrar(rel) {
   const partes = rel.split('/');
@@ -54,12 +56,12 @@ function registrar(rel) {
       grupos.set(sub, { nombre: partes[i - 1], hijos: new Set(), archivos: [] });
     }
     if (!esArchivo) {
-      const padre = partes.slice(0, i - 1).join('/');
-      if (padre && grupos.has(padre)) grupos.get(padre).hijos.add(sub);
+      const padre = partes.slice(0, i - 1).join('/'); // '' en el primer nivel
+      grupos.get(padre).hijos.add(sub);
     }
   }
   const carpeta = partes.slice(0, -1).join('/');
-  if (carpeta && grupos.has(carpeta)) grupos.get(carpeta).archivos.push(rel);
+  grupos.get(carpeta).archivos.push(rel);
 }
 
 for (const abs of archivos) registrar(path.relative(APP, abs).split(path.sep).join('/'));
@@ -74,7 +76,7 @@ const TIPO = {
   '.xcassets': 'folder.assetcatalog',
 };
 
-const ID_GRUPO_RAIZ = oid('grupo:HotelApp');
+const ID_GRUPO_RAIZ = oid('grupo:');
 const ID_PRODUCTOS = oid('grupo:Products');
 const ID_APP = oid('producto:Hotel.app');
 const ID_TARGET = oid('target:HotelApp');
@@ -167,14 +169,16 @@ const hijosDe = (ruta) => {
   return { hijos, arch };
 };
 
-function emitirGrupo(ruta, nombre, indent) {
-  const id = ruta === '' ? ID_GRUPO_RAIZ : oid('grupo:' + ruta);
+// Emite el grupo `ruta` con sus hijos directos y luego recursivamente.
+function emitirGrupo(ruta, indent) {
+  const nombre = grupos.get(ruta).nombre;
+  const id = oid('grupo:' + ruta);
   const { hijos, arch } = hijosDe(ruta);
-  push(`${indent}${id}${ruta === '' ? ' = {' : ` /* ${nombre} */ = {`}`);
+  push(`${indent}${id} /* ${nombre} */ = {`);
   push(`${indent}\tisa = PBXGroup;`);
   push(`${indent}\tchildren = (`);
   for (const h of hijos) {
-    push(`${indent}\t\t${oid('grupo:' + h)} /* ${path.basename(h)} */,`);
+    push(`${indent}\t\t${oid('grupo:' + h)} /* ${grupos.get(h).nombre} */,`);
   }
   for (const a of arch) {
     push(`${indent}\t\t${REF[a].fileref} /* ${path.basename(a)} */,`);
@@ -183,27 +187,11 @@ function emitirGrupo(ruta, nombre, indent) {
   push(`${indent}\tpath = ${nombre};`);
   push(`${indent}\tsourceTree = "<group>";`);
   push(`${indent}};`);
-  for (const h of hijos) {
-    emitirGrupo(h, path.basename(h), indent);
-  }
+  for (const h of hijos) emitirGrupo(h, indent);
 }
 
-push('\t\t' + ID_GRUPO_RAIZ + ' /* HotelApp */ = {');
-push('\t\t\tisa = PBXGroup;');
-push('\t\t\tchildren = (');
-{
-  const { hijos, arch } = hijosDe('');
-  for (const h of hijos) push(`\t\t\t\t${oid('grupo:' + h)} /* ${path.basename(h)} */,`);
-  for (const a of arch) push(`\t\t\t\t${REF[a].fileref} /* ${path.basename(a)} */,`);
-}
-push('\t\t\t);');
-push('\t\t\tpath = HotelApp;');
-push('\t\t\tsourceTree = "<group>";');
-push('\t\t};');
-{
-  const { hijos } = hijosDe('');
-  for (const h of hijos) emitirGrupo(h, path.basename(h), '\t\t');
-}
+emitirGrupo('', '\t\t');
+
 push(`\t\t${ID_PRODUCTOS} /* Products */ = {`);
 push('\t\t\tisa = PBXGroup;');
 push('\t\t\tchildren = (');
@@ -443,3 +431,90 @@ fs.writeFileSync(path.join(ws, 'contents.xcworkspacedata'),
   '<?xml version="1.0" encoding="UTF-8"?>\n<Workspace\n   version = "1.0">\n   <FileRef\n      location = "self:">\n   </FileRef>\n</Workspace>\n', 'utf8');
 
 console.log(`project.pbxproj generado con ${archivos.length} recursos y ${archivos.filter((a) => a.endsWith('.swift')).length} archivos Swift.`);
+
+// --- Scheme compartido ----------------------------------------------------
+// Sin él, `xcodebuild -scheme HotelApp` falla y Xcode no ofrece ⌘R.
+const scheme = `<?xml version="1.0" encoding="UTF-8"?>
+<Scheme
+   LastUpgradeVersion = "1500"
+   version = "1.7">
+   <BuildAction
+      parallelizeBuildables = "YES"
+      buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "${ID_TARGET}"
+               BuildableName = "Hotel.app"
+               BlueprintName = "HotelApp"
+               ReferencedContainer = "container:HotelApp.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
+   </BuildAction>
+   <TestAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <Testables>
+      </Testables>
+   </TestAction>
+   <LaunchAction
+      buildConfiguration = "Debug"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      launchStyle = "0"
+      useCustomWorkingDirectory = "NO"
+      ignoresPersistentStateOnLaunch = "NO"
+      debugDocumentVersioning = "YES"
+      debugServiceExtension = "internal"
+      allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "${ID_TARGET}"
+            BuildableName = "Hotel.app"
+            BlueprintName = "HotelApp"
+            ReferencedContainer = "container:HotelApp.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </LaunchAction>
+   <ProfileAction
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
+      useCustomWorkingDirectory = "NO"
+      debugDocumentVersioning = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "${ID_TARGET}"
+            BuildableName = "Hotel.app"
+            BlueprintName = "HotelApp"
+            ReferencedContainer = "container:HotelApp.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
+   </ProfileAction>
+   <AnalyzeAction
+      buildConfiguration = "Debug">
+   </AnalyzeAction>
+   <ArchiveAction
+      buildConfiguration = "Release"
+      revealArchiveInOrganizer = "YES">
+   </ArchiveAction>
+</Scheme>
+`;
+
+const dirScheme = path.join(SALIDA, 'xcshareddata', 'xcschemes');
+fs.mkdirSync(dirScheme, { recursive: true });
+fs.writeFileSync(path.join(dirScheme, 'HotelApp.xcscheme'), scheme, 'utf8');
+console.log('scheme HotelApp.xcscheme generado.');

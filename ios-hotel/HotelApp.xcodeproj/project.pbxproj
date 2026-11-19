@@ -122,11 +122,183 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3C31EA34B65D1E51D2BD5CCC /* HotelApp */ = {
+		265868287D96E9E8A9436B01 /* HotelApp */ = {
 			isa = PBXGroup;
 			children = (
+				E54617242086110502760919 /* App */,
+				B0968126E1CD7778B9D79B5A /* Core */,
+				89BD08148F02BD516F3F742F /* Features */,
+				7FF31AC04D43E8D5C3202F23 /* Resources */,
+				7AE33C17CBE7047C88131858 /* UI */,
 			);
 			path = HotelApp;
+			sourceTree = "<group>";
+		};
+		E54617242086110502760919 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				14748B9D290FB62E808A6EE3 /* HotelApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B0968126E1CD7778B9D79B5A /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				43C138D93AFD245F27AE2577 /* Config */,
+				9744DA29F2C8263CAEF53972 /* Models */,
+				B2E8C1093104FA6ADDA65E8F /* Networking */,
+				E134925E4C93AE22FE931B28 /* Notifications */,
+				CE21F6FE5363FF354B18D2C3 /* Persistence */,
+				FBEE87D673E800779E235FB8 /* Security */,
+				DDA4EE6EA50F3DF11C60FF31 /* Services */,
+				C4464C19BFB082DC274EE75F /* Session */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		43C138D93AFD245F27AE2577 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				029C53E3261E29D5E4A36819 /* AppConfig.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		9744DA29F2C8263CAEF53972 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				8F0747F9CB9520CF66D5676F /* HotelModels.swift */,
+				E2CC68B07E5C110404D1A494 /* ServicioModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B2E8C1093104FA6ADDA65E8F /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				CB2CB1957ED67D25C3427127 /* APIClient.swift */,
+				66F12A3AD7E8FFFF2BE8E2E5 /* APIError.swift */,
+				2ADF0D3193360649E0EFBFFD /* SesionEventos.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		E134925E4C93AE22FE931B28 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				CE02D73B0F8E18F034AB9FCF /* NotificacionService.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		CE21F6FE5363FF354B18D2C3 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				159CEE311F298838C641418D /* Entidades.swift */,
+				FEEC4C87987029D3E8F353FB /* PersistenciaController.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		FBEE87D673E800779E235FB8 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				465DAB02CAC12E94EFCC6031 /* BiometriaService.swift */,
+				DB869BA8EBB70DF157AEFA37 /* SocialAuthManager.swift */,
+				687ECF140C62ADD599B16E3A /* TokenStore.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		DDA4EE6EA50F3DF11C60FF31 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DD31BBD16A80489B8AF1AB9F /* CatalogoStore.swift */,
+				C1198C16B41B24364DE80F8E /* HotelAPI.swift */,
+				25CC63C8FFF8F6EFA98CE595 /* OperacionStore.swift */,
+				B9FD511474D8D347B6B9BACD /* ReservaStore.swift */,
+				32C95B1BA04F7D30114D746E /* ServicioStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C4464C19BFB082DC274EE75F /* Session */ = {
+			isa = PBXGroup;
+			children = (
+				1F52C8531E5590264AA98BAB /* SesionStore.swift */,
+			);
+			path = Session;
+			sourceTree = "<group>";
+		};
+		89BD08148F02BD516F3F742F /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				F45C0E2D350206873A9BEF8F /* Auth */,
+				83A308B3AA5153970060D67B /* Cliente */,
+				7CEC4D25E86B9E6106D4302C /* Operacion */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		F45C0E2D350206873A9BEF8F /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				EF12A32F55B44A268514481C /* LoginView.swift */,
+				D6FC3FFD5BB020E0D849CFB8 /* RegistroView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		83A308B3AA5153970060D67B /* Cliente */ = {
+			isa = PBXGroup;
+			children = (
+				757D6D19D6CD18974A1CC826 /* BuscarView.swift */,
+				7B1050F1FC2A057AE4A3841E /* EscanerQrView.swift */,
+				8EA599E26FA912D09ACDE8AD /* MisReservasView.swift */,
+				50D50E6298E7758666D428E0 /* MisSolicitudesView.swift */,
+				47BAFA9C61F4BC784E6E4CA8 /* ServicioHabitacionView.swift */,
+			);
+			path = Cliente;
+			sourceTree = "<group>";
+		};
+		7CEC4D25E86B9E6106D4302C /* Operacion */ = {
+			isa = PBXGroup;
+			children = (
+				A11A04C4F2E89893E9A38D9E /* CheckInQrView.swift */,
+				9F8F83D147003858380F7B3B /* DetalleReservaOperacionView.swift */,
+				B2B8EBFCECFF29C982FEA44A /* HabitacionesView.swift */,
+				090FCBF5F82FE1216DCB1836 /* NotificacionesView.swift */,
+				F29D8D0F8BB6D17A2E0024D7 /* OperacionHomeView.swift */,
+				4294065433F07760D2A71DA9 /* PagosPendientesView.swift */,
+				85CFA2254C5F81F24D4FAA1F /* PerfilView.swift */,
+				B64F2CBBD8CED225F9768D14 /* ReportesView.swift */,
+				794659C511A26F05F91556C5 /* SedesAdminView.swift */,
+				E0E00625491A483CFFA52384 /* SolicitudesRecepcionView.swift */,
+				6D792470BEAC1959A3B2465F /* TareasView.swift */,
+				1966ECBBC3A3AB0480C92474 /* UsuariosAdminView.swift */,
+				3CBE03DA595725BCF00CEE84 /* WalkInView.swift */,
+			);
+			path = Operacion;
+			sourceTree = "<group>";
+		};
+		7FF31AC04D43E8D5C3202F23 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AC13B5EC966CE305A2FA173A /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		7AE33C17CBE7047C88131858 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				38C51BAFA9BE76FFF5682055 /* EscanerQR.swift */,
+				3152969B0ABBD415B99FA4BB /* ImagenRemota.swift */,
+				BB3362BDD13D3216E2723CD7 /* SelectorFoto.swift */,
+				6737C9D2C3D2BD7C04FFB328 /* Tema.swift */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 		6673B2DECE32DB4B56E8C312 /* Products */ = {
@@ -140,7 +312,7 @@
 		7339F806BDD1E5082151D539 = {
 			isa = PBXGroup;
 			children = (
-				3C31EA34B65D1E51D2BD5CCC /* HotelApp */,
+				265868287D96E9E8A9436B01 /* HotelApp */,
 				6673B2DECE32DB4B56E8C312 /* Products */,
 			);
 			sourceTree = "<group>";

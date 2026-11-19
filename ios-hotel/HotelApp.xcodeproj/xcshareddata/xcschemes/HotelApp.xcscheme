@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "1500"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AA0000000000000000000004"
+               BlueprintIdentifier = "9E471859BC56DCC87FB7D854"
                BuildableName = "Hotel.app"
                BlueprintName = "HotelApp"
                ReferencedContainer = "container:HotelApp.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AA0000000000000000000004"
+            BlueprintIdentifier = "9E471859BC56DCC87FB7D854"
             BuildableName = "Hotel.app"
             BlueprintName = "HotelApp"
             ReferencedContainer = "container:HotelApp.xcodeproj">
@@ -61,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AA0000000000000000000004"
+            BlueprintIdentifier = "9E471859BC56DCC87FB7D854"
             BuildableName = "Hotel.app"
             BlueprintName = "HotelApp"
             ReferencedContainer = "container:HotelApp.xcodeproj">
