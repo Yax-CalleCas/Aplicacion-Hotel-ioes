@@ -21,12 +21,10 @@ xcuserdata/
 DerivedData/
 
 # ── Proyecto de Xcode ───────────────────────────────────────────────────────
-# SÍ se versiona: hay varias Macs en el equipo y no todas pueden ejecutar
-# xcodegen (el instituto no permite instalar binarios). Con el proyecto en el
-# repo, un `git clone` compila sin pasos extra.
-#
-# Sigue ignorándose lo que es de cada máquina (xcuserdata/ arriba) y lo
-# generado por SwiftPM.
+# El .xcodeproj SÍ se versiona: así `git clone` compila sin instalar xcodegen
+# (el instituto no permite binarios). Se ignoran solo los datos de cada Mac.
+HotelApp.xcodeproj/xcuserdata/
+HotelApp.xcodeproj/project.xcworkspace/xcuserdata/
 HotelApp.xcodeproj/xcshareddata/xcschemes/xcschememanagement.plist
 *.xcworkspace/
 

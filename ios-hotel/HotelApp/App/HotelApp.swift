@@ -17,7 +17,12 @@ struct HotelAppMain: App {
 
     init() {
         // Firebase se inicializa una sola vez por proceso.
-        if FirebaseApp.app() == nil {
+        // `GoogleService-Info.plist` está en .gitignore (contiene credenciales):
+        // en un clon recién bajado no existe, y `configure()` lanzaría una
+        // excepción al arrancar. Sin el plist la app sigue funcionando con el
+        // login propio del backend; solo se saltan Analytics y Crashlytics.
+        if FirebaseApp.app() == nil,
+           Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
         }
         Task { await NotificacionService.solicitarPermiso() }

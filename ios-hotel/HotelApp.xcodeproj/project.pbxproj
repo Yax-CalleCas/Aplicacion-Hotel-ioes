@@ -1,0 +1,446 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E1C56F315088C91FA589AB37 /* HotelApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14748B9D290FB62E808A6EE3 /* HotelApp.swift */; };
+		E50EAB4ABA35A30BC0C6CC7B /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029C53E3261E29D5E4A36819 /* AppConfig.swift */; };
+		0809E274CC66246ED082DB3E /* HotelModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0747F9CB9520CF66D5676F /* HotelModels.swift */; };
+		655A9210456EC660829F1C3B /* ServicioModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2CC68B07E5C110404D1A494 /* ServicioModels.swift */; };
+		60AF6B5D721171612B2BF5C7 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2CB1957ED67D25C3427127 /* APIClient.swift */; };
+		A1C2AFCF8B1DDD03A96E6241 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F12A3AD7E8FFFF2BE8E2E5 /* APIError.swift */; };
+		DB497F3F50C599B2A384F42C /* SesionEventos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ADF0D3193360649E0EFBFFD /* SesionEventos.swift */; };
+		46E4B40B41A0F91A449965C1 /* NotificacionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE02D73B0F8E18F034AB9FCF /* NotificacionService.swift */; };
+		57021975E2C54EC28D3E9693 /* Entidades.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159CEE311F298838C641418D /* Entidades.swift */; };
+		14EE3DCE82E85211EFCF3201 /* PersistenciaController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEC4C87987029D3E8F353FB /* PersistenciaController.swift */; };
+		A0CA8254490F7DE234A35D62 /* BiometriaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465DAB02CAC12E94EFCC6031 /* BiometriaService.swift */; };
+		002BBABDC545176E92EC7370 /* SocialAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB869BA8EBB70DF157AEFA37 /* SocialAuthManager.swift */; };
+		FBA7056A3C9A36E93899E9B7 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687ECF140C62ADD599B16E3A /* TokenStore.swift */; };
+		B28131A8D35A73B07AEE7A40 /* CatalogoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD31BBD16A80489B8AF1AB9F /* CatalogoStore.swift */; };
+		DABC2B473E191EEB6F88A35D /* HotelAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1198C16B41B24364DE80F8E /* HotelAPI.swift */; };
+		31E93A5A4D370E6639264363 /* OperacionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CC63C8FFF8F6EFA98CE595 /* OperacionStore.swift */; };
+		514783D18F88417B990CBF29 /* ReservaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9FD511474D8D347B6B9BACD /* ReservaStore.swift */; };
+		F73C06C45E4344B5EE2D2DAC /* ServicioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C95B1BA04F7D30114D746E /* ServicioStore.swift */; };
+		BDB796D5F10D30B6452711D2 /* SesionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F52C8531E5590264AA98BAB /* SesionStore.swift */; };
+		1203E66140739A2C21A17B84 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF12A32F55B44A268514481C /* LoginView.swift */; };
+		CA35C30A8CE071509A8F4B0C /* RegistroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FC3FFD5BB020E0D849CFB8 /* RegistroView.swift */; };
+		6D33E616DF5D690778A95C93 /* BuscarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757D6D19D6CD18974A1CC826 /* BuscarView.swift */; };
+		D5D9B802358826629FC45973 /* EscanerQrView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1050F1FC2A057AE4A3841E /* EscanerQrView.swift */; };
+		3D7144B1034058477EA58D73 /* MisReservasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA599E26FA912D09ACDE8AD /* MisReservasView.swift */; };
+		2D6988BAB32AC13B9E45B0CC /* MisSolicitudesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50D50E6298E7758666D428E0 /* MisSolicitudesView.swift */; };
+		BB8B909E7C3D967B249A9A54 /* ServicioHabitacionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BAFA9C61F4BC784E6E4CA8 /* ServicioHabitacionView.swift */; };
+		58B5C4E2125FF56670D68330 /* CheckInQrView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A04C4F2E89893E9A38D9E /* CheckInQrView.swift */; };
+		6B23F6207EACA677029C3068 /* DetalleReservaOperacionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8F83D147003858380F7B3B /* DetalleReservaOperacionView.swift */; };
+		2FE793F88D6FAD8683956D9A /* HabitacionesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B8EBFCECFF29C982FEA44A /* HabitacionesView.swift */; };
+		95E66EAF4395868B73801504 /* NotificacionesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 090FCBF5F82FE1216DCB1836 /* NotificacionesView.swift */; };
+		35AA8BCA2A608EFE044D9B60 /* OperacionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29D8D0F8BB6D17A2E0024D7 /* OperacionHomeView.swift */; };
+		EDE05827C26BEF65CB3FE137 /* PagosPendientesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4294065433F07760D2A71DA9 /* PagosPendientesView.swift */; };
+		8E0DD9883FB1818FA16CB62C /* PerfilView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85CFA2254C5F81F24D4FAA1F /* PerfilView.swift */; };
+		3D84132935A29531A313BC9D /* ReportesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B64F2CBBD8CED225F9768D14 /* ReportesView.swift */; };
+		8DA82D44551839F2F306C596 /* SedesAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 794659C511A26F05F91556C5 /* SedesAdminView.swift */; };
+		27B834A49340585DFF128F7A /* SolicitudesRecepcionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0E00625491A483CFFA52384 /* SolicitudesRecepcionView.swift */; };
+		2BEF7B2DF83BD017199A5D3C /* TareasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D792470BEAC1959A3B2465F /* TareasView.swift */; };
+		5DEFA4AF554BD2E46FBFE4E2 /* UsuariosAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1966ECBBC3A3AB0480C92474 /* UsuariosAdminView.swift */; };
+		D751C912213C82B73106ED30 /* WalkInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CBE03DA595725BCF00CEE84 /* WalkInView.swift */; };
+		5DDBF56ADE2A3FA417AF0D28 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC13B5EC966CE305A2FA173A /* Assets.xcassets */; };
+		7FAD331D65353EF6864B1596 /* EscanerQR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C51BAFA9BE76FFF5682055 /* EscanerQR.swift */; };
+		9379A5CB8ACB5A783BB4383F /* ImagenRemota.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3152969B0ABBD415B99FA4BB /* ImagenRemota.swift */; };
+		6EB3781E95B80725FDA5FA39 /* SelectorFoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3362BDD13D3216E2723CD7 /* SelectorFoto.swift */; };
+		0EFE7B094F6B46EC64367F89 /* Tema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6737C9D2C3D2BD7C04FFB328 /* Tema.swift */; };
+		5A51F6E63103673757031350 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = E257C154E8970C0525BECF9B /* FirebaseCore */; };
+		A3127867B64F6F0A039F8BA8 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 66332A8DA7F259F6E30E09BD /* FirebaseAuth */; };
+		F74A5A60D3B423E2B02AE961 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B16D6E2D522BD20AFFC70042 /* FirebaseAnalytics */; };
+		73C7B671EC189ED5F4EDE13D /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = AC83B1B69C12ADF5B8180353 /* FirebaseCrashlytics */; };
+		93E9E3D079CF4F5813703E5E /* FacebookLogin in Frameworks */ = {isa = PBXBuildFile; productRef = AEA2A3830FFAEB3844E81AD5 /* FacebookLogin */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		14748B9D290FB62E808A6EE3 /* HotelApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelApp.swift; sourceTree = "<group>"; };
+		029C53E3261E29D5E4A36819 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		8F0747F9CB9520CF66D5676F /* HotelModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelModels.swift; sourceTree = "<group>"; };
+		E2CC68B07E5C110404D1A494 /* ServicioModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicioModels.swift; sourceTree = "<group>"; };
+		CB2CB1957ED67D25C3427127 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		66F12A3AD7E8FFFF2BE8E2E5 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		2ADF0D3193360649E0EFBFFD /* SesionEventos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SesionEventos.swift; sourceTree = "<group>"; };
+		CE02D73B0F8E18F034AB9FCF /* NotificacionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificacionService.swift; sourceTree = "<group>"; };
+		159CEE311F298838C641418D /* Entidades.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entidades.swift; sourceTree = "<group>"; };
+		FEEC4C87987029D3E8F353FB /* PersistenciaController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenciaController.swift; sourceTree = "<group>"; };
+		465DAB02CAC12E94EFCC6031 /* BiometriaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometriaService.swift; sourceTree = "<group>"; };
+		DB869BA8EBB70DF157AEFA37 /* SocialAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthManager.swift; sourceTree = "<group>"; };
+		687ECF140C62ADD599B16E3A /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		DD31BBD16A80489B8AF1AB9F /* CatalogoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogoStore.swift; sourceTree = "<group>"; };
+		C1198C16B41B24364DE80F8E /* HotelAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelAPI.swift; sourceTree = "<group>"; };
+		25CC63C8FFF8F6EFA98CE595 /* OperacionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperacionStore.swift; sourceTree = "<group>"; };
+		B9FD511474D8D347B6B9BACD /* ReservaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReservaStore.swift; sourceTree = "<group>"; };
+		32C95B1BA04F7D30114D746E /* ServicioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicioStore.swift; sourceTree = "<group>"; };
+		1F52C8531E5590264AA98BAB /* SesionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SesionStore.swift; sourceTree = "<group>"; };
+		EF12A32F55B44A268514481C /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		D6FC3FFD5BB020E0D849CFB8 /* RegistroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistroView.swift; sourceTree = "<group>"; };
+		757D6D19D6CD18974A1CC826 /* BuscarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuscarView.swift; sourceTree = "<group>"; };
+		7B1050F1FC2A057AE4A3841E /* EscanerQrView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscanerQrView.swift; sourceTree = "<group>"; };
+		8EA599E26FA912D09ACDE8AD /* MisReservasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MisReservasView.swift; sourceTree = "<group>"; };
+		50D50E6298E7758666D428E0 /* MisSolicitudesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MisSolicitudesView.swift; sourceTree = "<group>"; };
+		47BAFA9C61F4BC784E6E4CA8 /* ServicioHabitacionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicioHabitacionView.swift; sourceTree = "<group>"; };
+		A11A04C4F2E89893E9A38D9E /* CheckInQrView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInQrView.swift; sourceTree = "<group>"; };
+		9F8F83D147003858380F7B3B /* DetalleReservaOperacionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetalleReservaOperacionView.swift; sourceTree = "<group>"; };
+		B2B8EBFCECFF29C982FEA44A /* HabitacionesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitacionesView.swift; sourceTree = "<group>"; };
+		090FCBF5F82FE1216DCB1836 /* NotificacionesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificacionesView.swift; sourceTree = "<group>"; };
+		F29D8D0F8BB6D17A2E0024D7 /* OperacionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperacionHomeView.swift; sourceTree = "<group>"; };
+		4294065433F07760D2A71DA9 /* PagosPendientesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagosPendientesView.swift; sourceTree = "<group>"; };
+		85CFA2254C5F81F24D4FAA1F /* PerfilView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerfilView.swift; sourceTree = "<group>"; };
+		B64F2CBBD8CED225F9768D14 /* ReportesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportesView.swift; sourceTree = "<group>"; };
+		794659C511A26F05F91556C5 /* SedesAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SedesAdminView.swift; sourceTree = "<group>"; };
+		E0E00625491A483CFFA52384 /* SolicitudesRecepcionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolicitudesRecepcionView.swift; sourceTree = "<group>"; };
+		6D792470BEAC1959A3B2465F /* TareasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TareasView.swift; sourceTree = "<group>"; };
+		1966ECBBC3A3AB0480C92474 /* UsuariosAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsuariosAdminView.swift; sourceTree = "<group>"; };
+		3CBE03DA595725BCF00CEE84 /* WalkInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkInView.swift; sourceTree = "<group>"; };
+		AC13B5EC966CE305A2FA173A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		38C51BAFA9BE76FFF5682055 /* EscanerQR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscanerQR.swift; sourceTree = "<group>"; };
+		3152969B0ABBD415B99FA4BB /* ImagenRemota.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagenRemota.swift; sourceTree = "<group>"; };
+		BB3362BDD13D3216E2723CD7 /* SelectorFoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectorFoto.swift; sourceTree = "<group>"; };
+		6737C9D2C3D2BD7C04FFB328 /* Tema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tema.swift; sourceTree = "<group>"; };
+		E7027CE5322BFE6ACDBEC020 /* Hotel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hotel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CE0594F8A079EC452CCBFF2D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5A51F6E63103673757031350 /* FirebaseCore in Frameworks */,
+				A3127867B64F6F0A039F8BA8 /* FirebaseAuth in Frameworks */,
+				F74A5A60D3B423E2B02AE961 /* FirebaseAnalytics in Frameworks */,
+				73C7B671EC189ED5F4EDE13D /* FirebaseCrashlytics in Frameworks */,
+				93E9E3D079CF4F5813703E5E /* FacebookLogin in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3C31EA34B65D1E51D2BD5CCC /* HotelApp */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = HotelApp;
+			sourceTree = "<group>";
+		};
+		6673B2DECE32DB4B56E8C312 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E7027CE5322BFE6ACDBEC020 /* Hotel.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7339F806BDD1E5082151D539 = {
+			isa = PBXGroup;
+			children = (
+				3C31EA34B65D1E51D2BD5CCC /* HotelApp */,
+				6673B2DECE32DB4B56E8C312 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9E471859BC56DCC87FB7D854 /* HotelApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2F62AAE534BA46EC59716F3 /* Build configuration list for PBXNativeTarget "HotelApp" */;
+			buildPhases = (
+				70B71D0D3EA6CEC00E43C58C /* Sources */,
+				CE0594F8A079EC452CCBFF2D /* Frameworks */,
+				75C46BE0BC21FAB875F8B510 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HotelApp;
+			packageProductDependencies = (
+				E257C154E8970C0525BECF9B /* FirebaseCore */,
+				66332A8DA7F259F6E30E09BD /* FirebaseAuth */,
+				B16D6E2D522BD20AFFC70042 /* FirebaseAnalytics */,
+				AC83B1B69C12ADF5B8180353 /* FirebaseCrashlytics */,
+				AEA2A3830FFAEB3844E81AD5 /* FacebookLogin */,
+			);
+			productName = Hotel;
+			productReference = E7027CE5322BFE6ACDBEC020 /* Hotel.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DF150BF466C6EF34365A8C35 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					9E471859BC56DCC87FB7D854 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 1AA4E6E081200A63A8A78E6F /* Build configuration list for PBXProject "HotelApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = es;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				es,
+				en,
+				Base,
+			);
+			mainGroup = 7339F806BDD1E5082151D539;
+			packageReferences = (
+				739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				AC14F415E84F46E2E53352CF /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
+			);
+			productRefGroup = 6673B2DECE32DB4B56E8C312 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9E471859BC56DCC87FB7D854 /* HotelApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		75C46BE0BC21FAB875F8B510 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5DDBF56ADE2A3FA417AF0D28 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		70B71D0D3EA6CEC00E43C58C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1C56F315088C91FA589AB37 /* HotelApp.swift in Sources */,
+				E50EAB4ABA35A30BC0C6CC7B /* AppConfig.swift in Sources */,
+				0809E274CC66246ED082DB3E /* HotelModels.swift in Sources */,
+				655A9210456EC660829F1C3B /* ServicioModels.swift in Sources */,
+				60AF6B5D721171612B2BF5C7 /* APIClient.swift in Sources */,
+				A1C2AFCF8B1DDD03A96E6241 /* APIError.swift in Sources */,
+				DB497F3F50C599B2A384F42C /* SesionEventos.swift in Sources */,
+				46E4B40B41A0F91A449965C1 /* NotificacionService.swift in Sources */,
+				57021975E2C54EC28D3E9693 /* Entidades.swift in Sources */,
+				14EE3DCE82E85211EFCF3201 /* PersistenciaController.swift in Sources */,
+				A0CA8254490F7DE234A35D62 /* BiometriaService.swift in Sources */,
+				002BBABDC545176E92EC7370 /* SocialAuthManager.swift in Sources */,
+				FBA7056A3C9A36E93899E9B7 /* TokenStore.swift in Sources */,
+				B28131A8D35A73B07AEE7A40 /* CatalogoStore.swift in Sources */,
+				DABC2B473E191EEB6F88A35D /* HotelAPI.swift in Sources */,
+				31E93A5A4D370E6639264363 /* OperacionStore.swift in Sources */,
+				514783D18F88417B990CBF29 /* ReservaStore.swift in Sources */,
+				F73C06C45E4344B5EE2D2DAC /* ServicioStore.swift in Sources */,
+				BDB796D5F10D30B6452711D2 /* SesionStore.swift in Sources */,
+				1203E66140739A2C21A17B84 /* LoginView.swift in Sources */,
+				CA35C30A8CE071509A8F4B0C /* RegistroView.swift in Sources */,
+				6D33E616DF5D690778A95C93 /* BuscarView.swift in Sources */,
+				D5D9B802358826629FC45973 /* EscanerQrView.swift in Sources */,
+				3D7144B1034058477EA58D73 /* MisReservasView.swift in Sources */,
+				2D6988BAB32AC13B9E45B0CC /* MisSolicitudesView.swift in Sources */,
+				BB8B909E7C3D967B249A9A54 /* ServicioHabitacionView.swift in Sources */,
+				58B5C4E2125FF56670D68330 /* CheckInQrView.swift in Sources */,
+				6B23F6207EACA677029C3068 /* DetalleReservaOperacionView.swift in Sources */,
+				2FE793F88D6FAD8683956D9A /* HabitacionesView.swift in Sources */,
+				95E66EAF4395868B73801504 /* NotificacionesView.swift in Sources */,
+				35AA8BCA2A608EFE044D9B60 /* OperacionHomeView.swift in Sources */,
+				EDE05827C26BEF65CB3FE137 /* PagosPendientesView.swift in Sources */,
+				8E0DD9883FB1818FA16CB62C /* PerfilView.swift in Sources */,
+				3D84132935A29531A313BC9D /* ReportesView.swift in Sources */,
+				8DA82D44551839F2F306C596 /* SedesAdminView.swift in Sources */,
+				27B834A49340585DFF128F7A /* SolicitudesRecepcionView.swift in Sources */,
+				2BEF7B2DF83BD017199A5D3C /* TareasView.swift in Sources */,
+				5DEFA4AF554BD2E46FBFE4E2 /* UsuariosAdminView.swift in Sources */,
+				D751C912213C82B73106ED30 /* WalkInView.swift in Sources */,
+				7FAD331D65353EF6864B1596 /* EscanerQR.swift in Sources */,
+				9379A5CB8ACB5A783BB4383F /* ImagenRemota.swift in Sources */,
+				6EB3781E95B80725FDA5FA39 /* SelectorFoto.swift in Sources */,
+				0EFE7B094F6B46EC64367F89 /* Tema.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		919359C0985C402CAE2D4ECE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B53784C79861738CEF0EF818 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A3FD2624D90AA76C1E18FB70 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G48CMF53GY;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HotelApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = pe.agrocorp.hotel;
+				PRODUCT_NAME = Hotel;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CB4CAEBFF1A865FD02635BC0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = G48CMF53GY;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = HotelApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = pe.agrocorp.hotel;
+				PRODUCT_NAME = Hotel;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1AA4E6E081200A63A8A78E6F /* Build configuration list for PBXProject "HotelApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				919359C0985C402CAE2D4ECE /* Debug */,
+				B53784C79861738CEF0EF818 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2F62AAE534BA46EC59716F3 /* Build configuration list for PBXNativeTarget "HotelApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3FD2624D90AA76C1E18FB70 /* Debug */,
+				CB4CAEBFF1A865FD02635BC0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+		AC14F415E84F46E2E53352CF /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 17.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E257C154E8970C0525BECF9B /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		66332A8DA7F259F6E30E09BD /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		B16D6E2D522BD20AFFC70042 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		AC83B1B69C12ADF5B8180353 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 739FAFB595ECF42F2AD46A64 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		AEA2A3830FFAEB3844E81AD5 /* FacebookLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AC14F415E84F46E2E53352CF /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DF150BF466C6EF34365A8C35 /* Project object */;
+}
