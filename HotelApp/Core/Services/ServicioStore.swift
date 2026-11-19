@@ -9,6 +9,18 @@ struct GrupoCatalogo: Identifiable {
     var id: String { categoria }
 }
 
+/// Estancia del cliente en curso (check-in hecho).
+///
+/// Se resuelve con `/reservas/mias` (`estado == EN_CURSO`) y no con
+/// `/estadias/activas`, porque ese endpoint exige rol operativo y un cliente
+/// recibiría 403.
+struct EstadiaCliente: Equatable, Sendable {
+    let reservaId: Int
+    let reservaCodigo: String
+    let habitacionId: Int?
+    let habitacionNumero: String?
+}
+
 /// Estado del servicio a la habitación.
 ///
 /// Compartido entre la vista del cliente (pedir) y la de recepción (gestionar).
@@ -29,15 +41,22 @@ final class ServicioStore {
     private(set) var procesando = false
     private(set) var error: String?
 
-    /// El cliente no tiene check-in activo: el servicio a la habitación no
-    /// aplica. Se muestra como aviso informativo, no como error.
+    /// El cliente no tiene reserva en curso (sin check-in): el servicio a la
+    /// habitación no aplica. Se muestra como aviso informativo, no como error.
     private(set) var sinEstadiaActiva = false
 
-    /// Nueva bandera: hay estancia activa para este cliente.
-    /// Se pobla al cargar la vista y determina si muestra el botón "Pedir".
-    private(set) var estanciaActiva: Estadia?
+    /// Consultando si hay check-in. Evita mostrar el catálogo antes de saber
+    /// si el cliente está alojado.
+    private(set) var comprobandoEstadia = true
+
+    /// Reserva en curso del cliente. `nil` mientras no se ha consultado o si
+    /// no hay check-in hecho.
+    private(set) var estadia: EstadiaCliente?
 
     private let api = HotelAPI.shared
+
+    /// Hay check-in activo: se puede pedir servicio a la habitación.
+    var puedePedir: Bool { estadia != nil }
 
     // MARK: - Catalogo
 
@@ -68,6 +87,53 @@ final class ServicioStore {
 
     // MARK: - Cliente
 
+    /// Detecta si el cliente está hospedado (reserva EN_CURSO = check-in hecho).
+    ///
+    /// Si hay reserva en curso se carga su detalle para conocer la habitación
+    /// asignada; el pedido no necesita enviarla, el backend la deduce del JWT.
+    func cargarEstadiaActiva() async {
+        comprobandoEstadia = true
+        defer { comprobandoEstadia = false }
+
+        do {
+            let reservasCliente = try await api.misReservas()
+
+            guard let activa = reservasCliente.first(where: { $0.estado == "EN_CURSO" })
+            else {
+                estadia = nil
+                sinEstadiaActiva = true
+                return
+            }
+
+            var habitacionId: Int?
+            var habitacionNumero: String?
+
+            if let detalle = try? await api.reserva(id: activa.id),
+               let linea = detalle.lineas.first(where: { $0.habitacionNumero != nil })
+                ?? detalle.lineas.first {
+                habitacionId = linea.habitacionId
+                habitacionNumero = linea.habitacionNumero
+            }
+
+            estadia = EstadiaCliente(reservaId: activa.id,
+                                     reservaCodigo: activa.codigo,
+                                     habitacionId: habitacionId,
+                                     habitacionNumero: habitacionNumero)
+            sinEstadiaActiva = false
+        } catch let apiError as APIError {
+            // Sin red no se inventa una estancia: se muestra el aviso.
+            estadia = nil
+            sinEstadiaActiva = true
+            // Un fallo de transporte no debe tapar el catálogo con un error rojo.
+            if !apiError.esTransporte {
+                error = apiError.mensajeUsuario
+            }
+        } catch {
+            estadia = nil
+            sinEstadiaActiva = true
+        }
+    }
+
     func cargarMisSolicitudes() async {
         do {
             misSolicitudes = try await api.misSolicitudes()
@@ -79,7 +145,10 @@ final class ServicioStore {
         }
     }
 
-    /// Devuelve la solicitud creada, o nil si falló (el error queda en `error`.
+    /// Devuelve la solicitud creada, o nil si falló (el error queda en `error`).
+    ///
+    /// No se cobra aquí: el backend crea la solicitud y, cuando recepción la
+    /// aprueba, genera un cargo CONSUMO en el folio que se paga en el check-out.
     func crearSolicitud(items: [ItemSolicitudRequest],
                         observaciones: String?) async -> SolicitudConsumo? {
         guard !items.isEmpty else {
@@ -101,7 +170,8 @@ final class ServicioStore {
             // 409 SIN_ESTADIA_ACTIVA: no es un fallo, es que no hay estancia.
             if apiError.motivo == "SIN_ESTADIA_ACTIVA" {
                 sinEstadiaActiva = true
-                estanciaActiva = nil
+                estadia = nil
+                self.error = nil
             } else {
                 self.error = apiError.mensajeUsuario
             }
@@ -209,34 +279,8 @@ final class ServicioStore {
         procesando = false
         cargandoCatalogo = false
         sinEstadiaActiva = false
-        estanciaActiva = nil
+        comprobandoEstadia = true
+        estadia = nil
         error = nil
-    }
-
-    // MARK: - Check-in activo (nuevo)
-
-    /// Consulta al backend si hay una estancia activa para el usuario autenticado.
-    /// Actualiza `estanciaActiva` y `sinEstadiaActiva` según el resultado.
-    func cargarEstanciaActiva() async {
-        sinEstadiaActiva = false
-        estanciaActiva = nil
-
-        do {
-            let estadias = try await api.estadiasActivas()
-            // Tomamos la primera estancia activa (asumiendo un usuario único por dispositivo).
-            if let estancia = estadias.first(where: { $0.activa }) {
-                estanciaActiva = estancia
-                sinEstadiaActiva = false
-            } else {
-                sinEstadiaActiva = true
-            }
-        } catch let apiError as APIError {
-            // Si el backend devuelve 404/sin datos, tratamos como "no hay estancia activa aún".
-            sinEstadiaActiva = true
-            estanciaActiva = nil
-        } catch {
-            sinEstadiaActiva = true
-            estanciaActiva = nil
-        }
     }
 }

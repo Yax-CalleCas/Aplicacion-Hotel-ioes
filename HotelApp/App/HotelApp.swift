@@ -129,9 +129,16 @@ struct SplashView: View {
 }
 
 /// Navegación del cliente.
+///
+/// «Servicio» y «Mis pedidos» solo existen con una estancia en curso: antes
+/// ocupaban dos de las cinco pestañas aunque el cliente no estuviera alojado
+/// y no pudiera pedir nada.
 struct TabViewCliente: View {
 
     let usuario: Usuario
+
+    @Environment(ServicioStore.self) private var servicio
+    @Environment(\.scenePhase) private var escena
 
     var body: some View {
         TabView {
@@ -141,14 +148,23 @@ struct TabViewCliente: View {
             NavigationStack { MisReservasView() }
                 .tabItem { Label("Mis reservas", systemImage: "calendar") }
 
-            NavigationStack { ServicioHabitacionView() }
-                .tabItem { Label("Servicio", systemImage: "bell.badge.fill") }
+            if servicio.puedePedir {
+                NavigationStack { ServicioHabitacionView() }
+                    .tabItem { Label("Servicio", systemImage: "bell.badge.fill") }
 
-            NavigationStack { MisSolicitudesView() }
-                .tabItem { Label("Mis pedidos", systemImage: "list.bullet.rectangle") }
+                NavigationStack { MisSolicitudesView() }
+                    .tabItem { Label("Mis pedidos", systemImage: "list.bullet.rectangle") }
+            }
 
             NavigationStack { PerfilView(usuario: usuario) }
                 .tabItem { Label("Perfil", systemImage: "person.crop.circle") }
+        }
+        .task { await servicio.cargarEstadiaActiva() }
+        // Recepción hace el check-in mientras el cliente espera: al volver a
+        // la app se refresca para que aparezcan «Servicio» y «Mis pedidos».
+        .onChange(of: escena) { _, nueva in
+            guard nueva == .active else { return }
+            Task { await servicio.cargarEstadiaActiva() }
         }
     }
 }

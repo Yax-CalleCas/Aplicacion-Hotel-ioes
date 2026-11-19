@@ -96,6 +96,11 @@ struct DetalleReservaOperacionView: View {
     private func cuenta(_ folio: Folio) -> some View {
         Tarjeta {
             VStack(spacing: 8) {
+                fila("Hospedaje", Tema.soles(folio.totalHospedaje))
+                if folio.totalConsumos > 0 {
+                    fila("Servicio a la habitación (\(folio.cargosConsumo.count))",
+                         Tema.soles(folio.totalConsumos))
+                }
                 fila("Total cargos", Tema.soles(folio.totalCargos))
                 fila("Pagado", Tema.soles(folio.totalPagado))
                 HStack {

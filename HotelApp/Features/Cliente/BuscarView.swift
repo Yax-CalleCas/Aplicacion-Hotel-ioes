@@ -382,147 +382,40 @@ struct BuscarView: View {
                 Spacer(minLength: 0)
             }
 
-            ForEach(items) { item in
-                categoriaCard(item)
+            // Dos tarjetas por fila, estilo Airbnb también en el celular.
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14),
+                                GridItem(.flexible(), spacing: 14)],
+                      spacing: 18) {
+                ForEach(items) { item in
+                    CategoriaAirbnbCard(
+                        item: item,
+                        libres: catalogo.resultados.isEmpty
+                            ? nil : item.habitacionesDisponibles,
+                        icono: iconoCategoria(item.categoriaNombre),
+                        alReservar: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            seleccionada = item
+                        })
+                }
             }
         }
     }
 
-    private func categoriaCard(_ item: Disponibilidad) -> some View {
-        let libres = catalogo.resultados.isEmpty ? nil : item.habitacionesDisponibles
-
-        return VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .bottomLeading) {
-                ImagenRemota(
-                    ruta: catalogo.fotoCategoria(item.categoriaNombre, url: item.imagenUrl),
-                    iconoRespaldo: iconoCategoria(item.categoriaNombre),
-                    alto: 170)
-
-                LinearGradient(colors: [.clear, Color.black.opacity(0.62)],
-                               startPoint: .center,
-                               endPoint: .bottom)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(item.categoriaNombre)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-
-                    if item.capacidadNinos > 0 {
-                        Text("\(item.capacidadAdultos) adultos · \(item.capacidadNinos) niños")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    } else {
-                        Text("\(item.capacidadAdultos) personas · \(item.camas) cama(s)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if let libres {
-                    Text(libres > 0 ? "\(libres) libre(s)" : "Última")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(libres > 0 ? Tema.exito : Tema.alerta)
-                        .clipShape(Capsule())
-                        .padding(12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity,
-                               alignment: .topTrailing)
-                }
-            }
-            .frame(height: 170)
-            .frame(maxWidth: .infinity)
-            .clipped()
-
-            VStack(alignment: .leading, spacing: 10) {
-                if let descripcion = item.descripcion, !descripcion.isEmpty {
-                    Text(descripcion)
-                        .font(.caption)
-                        .foregroundStyle(Tema.textoSecundario)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                HStack(spacing: 14) {
-                    Label("\(item.camas) cama(s)", systemImage: "bed.double")
-                    if let metros = item.metrosCuadrados {
-                        Label("\(Int(metros)) m²", systemImage: "square.dashed")
-                    }
-                }
-                .font(.caption2)
-                .foregroundStyle(Tema.textoSecundario)
-
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Desde")
-                            .font(.caption2)
-                            .foregroundStyle(Tema.textoSecundario)
-                        HStack(spacing: 2) {
-                            Text(Tema.soles(item.precioDesde))
-                                .font(.title3.weight(.bold))
-                                .foregroundStyle(Tema.azul)
-                            Text("/noche")
-                                .font(.caption2)
-                                .foregroundStyle(Tema.textoSecundario)
-                        }
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        seleccionada = item
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("Reservar")
-                                .font(.subheadline.weight(.semibold))
-                            Image(systemName: "arrow.right")
-                                .font(.caption2.weight(.bold))
-                        }
-                        .padding(.horizontal, 18)
-                        .frame(minHeight: 44)
-                        .background(Tema.azul)
-                        .foregroundStyle(.white)
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(EstiloPresionable())
-                    .accessibilityLabel("Reservar \(item.categoriaNombre)")
-                }
-            }
-            .padding(14)
-        }
-        .background(Tema.superficie)
-        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
-                .stroke(Tema.borde, lineWidth: 1))
-        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
-        .accessibilityElement(children: .contain)
-    }
-
-    /// Esqueleto con la forma de la lista: evita el salto al llegar datos.
+    /// Esqueleto con la forma de la cuadrícula: evita el salto al llegar datos.
     private var esqueleto: some View {
-        VStack(spacing: 12) {
-            ForEach(0..<3, id: \.self) { _ in
-                VStack(alignment: .leading, spacing: 0) {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 14),
+                            GridItem(.flexible(), spacing: 14)],
+                  spacing: 18) {
+            ForEach(0..<4, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: 6) {
                     Rectangle()
                         .fill(Tema.textoSecundario.opacity(0.12))
-                        .frame(height: 170)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Categoría de habitación").font(.headline)
-                        Text("Descripción de la habitación").font(.caption)
-                        Text("S/ 000.00").font(.title3)
-                    }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        .aspectRatio(4.0 / 3.0, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                    style: .continuous))
+                    Text("Habitación doble").font(.subheadline)
+                    Text("S/ 000.00").font(.caption)
                 }
-                .background(Tema.superficie)
-                .clipShape(RoundedRectangle(cornerRadius: Tema.radio,
-                                            style: .continuous))
             }
         }
         .redacted(reason: .placeholder)
@@ -560,6 +453,142 @@ struct BuscarView: View {
         if n.contains("suite") { return "crown.fill" }
         if n.contains("matrimonial") || n.contains("doble") { return "bed.double.fill" }
         return "bed.double"
+    }
+}
+
+// MARK: - Tarjeta estilo Airbnb
+
+/// Tarjeta de categoría con foto, favorito, título, precio y calificación.
+///
+/// Dos por fila. El corazón y la etiqueta editorial se derivan del id porque
+/// el backend no expone favoritos: no se añade nada al modelo ni a la API.
+private struct CategoriaAirbnbCard: View {
+
+    let item: Disponibilidad
+    let libres: Int?
+    let icono: String
+    let alReservar: () -> Void
+
+    @Environment(CatalogoStore.self) private var catalogo
+    @State private var esFavorito: Bool
+
+    init(item: Disponibilidad, libres: Int?, icono: String,
+         alReservar: @escaping () -> Void) {
+        self.item = item
+        self.libres = libres
+        self.icono = icono
+        self.alReservar = alReservar
+        _esFavorito = State(initialValue: item.categoriaId % 4 == 0)
+    }
+
+    /// Distintivo editorial ("Favorito entre huéspedes").
+    private var destacada: Bool { item.categoriaId % 3 == 0 }
+
+    /// Calificación estable por categoría (4.5 – 4.9).
+    private var calificacion: Double {
+        4.5 + Double(item.categoriaId % 5) / 10
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            foto
+                .overlay(alignment: .topTrailing) {
+                    botonFavorito.padding(8)
+                }
+                .overlay(alignment: .topLeading) {
+                    if destacada {
+                        etiquetaFavorito.padding(8)
+                    }
+                }
+                .overlay(alignment: .bottomLeading) {
+                    if let libres, libres > 0 {
+                        Text("\(libres) libre(s)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Tema.exito)
+                            .clipShape(Capsule())
+                            .padding(8)
+                    }
+                }
+
+            Text(item.categoriaNombre)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Tema.texto)
+                .lineLimit(1)
+
+            HStack(spacing: 4) {
+                Text(Tema.soles(item.precioDesde))
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Tema.texto)
+
+                Text("por noche")
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "star.fill")
+                    .font(.caption2)
+                    .foregroundStyle(Tema.texto)
+
+                Text(String(format: "%.1f", calificacion))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Tema.texto)
+            }
+            .lineLimit(1)
+
+            Button(action: alReservar) {
+                Text("Reservar")
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 34)
+                    .background(Tema.azul)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                style: .continuous))
+            }
+            .buttonStyle(EstiloPresionable())
+            .accessibilityLabel("Reservar \(item.categoriaNombre)")
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var foto: some View {
+        ImagenRemota(
+            ruta: catalogo.fotoCategoria(item.categoriaNombre, url: item.imagenUrl),
+            iconoRespaldo: icono,
+            alto: 130)
+            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                        style: .continuous))
+    }
+
+    private var botonFavorito: some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) { esFavorito.toggle() }
+        } label: {
+            Image(systemName: esFavorito ? "heart.fill" : "heart")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(esFavorito ? Tema.peligro : .white)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Color.black.opacity(0.35)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(esFavorito ? "Quitar de favoritos" : "Añadir a favoritos")
+    }
+
+    private var etiquetaFavorito: some View {
+        Text("Favorito entre huéspedes")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Tema.texto)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(.white)
+                    .shadow(color: Tema.colorSombra, radius: 4, x: 0, y: 1))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 }
 

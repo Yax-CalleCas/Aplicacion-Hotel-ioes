@@ -7,7 +7,6 @@ import SwiftUI
 struct ServicioHabitacionView: View {
 
     @Environment(ServicioStore.self) private var servicio
-    @Environment(SesionStore.self) private var sesion
     @Environment(\.dismiss) private var dismiss
 
     @State private var carrito: [Int: Int] = [:]
@@ -18,37 +17,15 @@ struct ServicioHabitacionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // 1. Si no hay estancia activa activa, aviso inmediato (se carga
-                //    de forma proactiva en el task .task de abajo).
-                if servicio.sinEstadiaActiva {
+                if servicio.comprobandoEstadia && servicio.estadia == nil {
+                    ProgressView("Comprobando tu estancia...")
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 40)
+                } else if servicio.sinEstadiaActiva {
+                    // Sin check-in no hay nada que pedir: el aviso lo explica.
                     avisoSinEstadia
-                    // Nada más mostramos: el aviso cubre todo el resto.
-                    return
-                }
-
-                // 2. Si hay error de red o backend, mostrarlo.
-                if let error = servicio.error {
-                    Aviso(tipo: .peligro, titulo: "No se pudo enviar", mensaje: error)
-                }
-
-                // 3. Catálogo y formulario — solo si NO hay aviso de "sin estancia".
-                //    Si el catálogo está vacío mostramo unEstadoVacio.
-                if servicio.catalogoPorCategoria.isEmpty {
-                    EstadoVacio(icono: "shippingbox",
-                                titulo: "Sin productos",
-                                mensaje: "Recepción aún no ha publicado el catálogo de servicio a la habitación.")
-                    // No mostramos la barra de enviar si no hay productos.
                 } else {
-                    ForEach(servicio.catalogoPorCategoria) { grupo in
-                        seccion(categoria: grupo.categoria, productos: grupo.productos)
-                    }
-
-                    campoObservaciones
-
-                    // Barra de enviar solo si hay algo en el carrito.
-                    if !carrito.isEmpty {
-                        barraEnviar
-                    }
+                    contenidoServicio
                 }
             }
             .padding(16)
@@ -57,12 +34,24 @@ struct ServicioHabitacionView: View {
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Servicio a la habitación")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if servicio.puedePedir {
+                ToolbarItem(placement: .primaryAction) {
+                    NavigationLink {
+                        MisSolicitudesView()
+                    } label: {
+                        Image(systemName: "list.bullet.rectangle")
+                    }
+                    .accessibilityLabel("Mis pedidos")
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
-            if !carrito.isEmpty { barraEnviar }
+            if !carrito.isEmpty && !servicio.sinEstadiaActiva { barraEnviar }
         }
         .task {
-            await servicio.cargarCatalogo()
             await servicio.cargarEstanciaActiva()
+            await servicio.cargarCatalogo()
             servicio.limpiarError()
         }
         .alert("Solicitud enviada", isPresented: $mostrandoConfirmacion) {
@@ -78,8 +67,43 @@ struct ServicioHabitacionView: View {
         }
     }
 
-    // MARK: - Subvistas
+    // MARK: - Contenido
 
+    @ViewBuilder
+    private var contenidoServicio: some View {
+        if let error = servicio.error {
+            Aviso(tipo: .peligro, titulo: "No se pudo enviar", mensaje: error)
+        }
+
+        avisoRecepcion
+
+        if servicio.cargandoCatalogo && servicio.productos.isEmpty {
+            ProgressView("Cargando catálogo...")
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
+        } else if servicio.catalogoPorCategoria.isEmpty {
+            EstadoVacio(icono: "shippingbox",
+                        titulo: "Sin productos",
+                        mensaje: "Recepción aún no ha publicado el catálogo de servicio a la habitación.")
+        } else {
+            ForEach(servicio.catalogoPorCategoria) { grupo in
+                seccion(categoria: grupo.categoria, productos: grupo.productos)
+            }
+
+            campoObservaciones
+        }
+    }
+
+    /// Recuerda que el importe no se cobra ahora: va al folio del check-out.
+    private var avisoRecepcion: some View {
+        Aviso(tipo: .info,
+              titulo: "Lo atiende recepción",
+              mensaje: "No se cobra ahora. El importe se suma a tu cuenta"
+                  + (servicio.estadia?.habitacionNumero.map { " de la habitación \($0)" } ?? "")
+                  + " y se paga al hacer el check-out.")
+    }
+
+    /// El servicio a la habitación exige estar alojado. Sin check-in no aplica.
     private var avisoSinEstadia: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(spacing: 12) {
@@ -322,17 +346,16 @@ struct ServicioHabitacionView: View {
         carrito.values.reduce(0, +)
     }
 
+    /// La habitación y la reserva las deduce el backend del token del cliente:
+    /// `POST /servicio-habitacion` solo recibe los productos.
     private func enviar() async {
         let items = carrito.map { ItemSolicitudRequest(productoId: $0.key, cantidad: $0.value) }
         let texto = observaciones.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Asociamos automáticamente la solicitud a la estancia activa y habitación
-        // si el backend lo requiere (añadiremos el habitacionId/estadiaId en el request
-        // cuando el modelo lo soporte; por ahora el backend ya lo asocia por JWT/cookie).
-        if let criada = await servicio.crearSolicitud(
+        if let creada = await servicio.crearSolicitud(
             items: items,
             observaciones: texto.isEmpty ? nil : texto) {
-            enviada = criada
+            enviada = creada
             mostrandoConfirmacion = true
         }
     }

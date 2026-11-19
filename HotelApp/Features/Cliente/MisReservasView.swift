@@ -7,6 +7,7 @@ import UIKit
 struct MisReservasView: View {
 
     @Environment(ReservaStore.self) private var reservas
+    @Environment(ServicioStore.self) private var servicio
 
     @State private var codigo = ""
     @State private var buscandoCodigo = false
@@ -51,9 +52,15 @@ struct MisReservasView: View {
         .background(Tema.fondo.ignoresSafeArea())
         .navigationTitle("Mis reservas")
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await reservas.cargar() }
+        .refreshable {
+            await reservas.cargar()
+            await servicio.cargarEstadiaActiva()
+        }
         .task {
             if reservas.reservas.isEmpty { await reservas.cargar() }
+            // Tras el check-in (o el check-out) en recepción cambia el estado:
+            // se refresca al abrir esta pantalla.
+            await servicio.cargarEstadiaActiva()
         }
         .navigationDestination(isPresented: $irADetalle) {
             if let reservaEncontrada {
@@ -241,6 +248,7 @@ struct DetalleReservaView: View {
     let reservaId: Int
 
     @Environment(ReservaStore.self) private var reservas
+    @Environment(ServicioStore.self) private var servicio
     @Environment(SesionStore.self) private var sesion
     @Environment(\.scenePhase) private var escena
 
@@ -278,6 +286,12 @@ struct DetalleReservaView: View {
                 VStack(spacing: 16) {
                     cabecera(reserva)
                     habitaciones(reserva)
+
+                    // Con el check-in hecho, el cliente pide desde su propia
+                    // habitación: no se vuelve a elegir ni reserva ni cuarto.
+                    if reserva.enCurso {
+                        pedirServicio(reserva)
+                    }
 
                     if let folio {
                         cuenta(folio)
@@ -423,6 +437,48 @@ struct DetalleReservaView: View {
         }
     }
 
+    /// Acceso al servicio a la habitación desde la reserva en curso.
+    ///
+    /// Solo aparece con el check-in hecho (`EN_CURSO`). El pedido no envía
+    /// habitación ni reserva: el backend las deduce del token del cliente.
+    @ViewBuilder
+    private func pedirServicio(_ r: Reserva) -> some View {
+        let habitacion = r.lineas.compactMap(\.habitacionNumero).first
+
+        Tarjeta {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "bell.badge.fill")
+                        .foregroundStyle(Tema.azul)
+                    Text(habitacion.map { "Estás en la habitación \($0)" }
+                        ?? "Estás alojado")
+                        .font(.subheadline.weight(.semibold))
+                }
+
+                Text("Pide bebidas, comidas o artículos de higiene. No se cobra "
+                     + "ahora: el importe se suma a tu cuenta y se paga al hacer "
+                     + "el check-out.")
+                    .font(.caption)
+                    .foregroundStyle(Tema.textoSecundario)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                NavigationLink {
+                    ServicioHabitacionView()
+                } label: {
+                    Label("Pedir servicio", systemImage: "cart.badge.plus")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 46)
+                        .background(Tema.azul)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
+                                                    style: .continuous))
+                }
+                .buttonStyle(EstiloPresionable())
+            }
+        }
+    }
+
     private func cuenta(_ folio: Folio) -> some View {
         Tarjeta {
             VStack(alignment: .leading, spacing: 10) {
@@ -434,6 +490,28 @@ struct DetalleReservaView: View {
                         texto: folio.saldo > 0 ? "Saldo pendiente" : "Pagado",
                         color: folio.saldo > 0 ? Tema.alerta : Tema.exito)
                 }
+
+                // Total a liquidar en el check-out: hospedaje + pedidos
+                // (más cualquier cargo manual que recepción haya añadido).
+                HStack {
+                    Text("Total a pagar")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(Tema.soles(folio.totalCargos))
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Tema.azul)
+                }
+
+                HStack(spacing: 8) {
+                    Text("Hospedaje \(Tema.soles(folio.totalHospedaje))")
+                    if folio.totalConsumos > 0 {
+                        Text("· Consumos \(Tema.soles(folio.totalConsumos))")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(Tema.textoSecundario)
+
+                Divider()
 
                 if folio.cargos.isEmpty {
                     Text("Sin cargos registrados.")

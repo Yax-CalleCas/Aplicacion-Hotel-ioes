@@ -542,6 +542,33 @@ struct Folio: Codable, Identifiable, Equatable, Sendable {
 
     /// Pagos pendientes de verificación por recepción.
     var pagosEnVerificacion: [Pago] { pagos.filter { $0.pendiente } }
+
+    // --- Desglose para el check-out -------------------------------------
+    //
+    // El backend crea un cargo ALOJAMIENTO por la estadía y un cargo CONSUMO
+    // por cada pedido de servicio a la habitación aprobado. El check-out se
+    // liquida con el total de ambos, así que la UI los muestra separados.
+
+    /// Cargos de hospedaje (noches).
+    var cargosHospedaje: [Cargo] {
+        cargosActivos.filter { $0.concepto.uppercased() == "ALOJAMIENTO" }
+    }
+
+    /// Cargos de servicio a la habitación (pedidos aprobados).
+    var cargosConsumo: [Cargo] {
+        cargosActivos.filter { $0.concepto.uppercased() == "CONSUMO" }
+    }
+
+    var totalHospedaje: Decimal {
+        cargosHospedaje.reduce(Decimal.zero) { $0 + $1.monto }
+    }
+
+    var totalConsumos: Decimal {
+        cargosConsumo.reduce(Decimal.zero) { $0 + $1.monto }
+    }
+
+    /// Costo de hospedaje + todos los pedidos acumulados.
+    var totalEstadia: Decimal { totalHospedaje + totalConsumos }
 }
 
 /// Imagen subida al backend.
