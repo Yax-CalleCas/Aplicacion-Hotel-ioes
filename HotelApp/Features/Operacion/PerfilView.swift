@@ -35,23 +35,9 @@ struct PerfilView: View {
                             .padding(.leading, 4)
 
                         NavigationLink {
-                            UsuariosAdminView()
-                        } label: {
-                            filaAdministracion(icono: "person.2.fill",
-                                               color: Tema.azul,
-                                               titulo: "Usuarios y accesos",
-                                               subtitulo: "Crea cuentas, resetea contraseñas y desbloquea")
-                        }
-                        .buttonStyle(EstiloPresionable())
-                        .accessibilityLabel("Usuarios y accesos. Crea cuentas, resetea contraseñas y desbloquea")
-
-                        NavigationLink {
                             SedesAdminView()
                         } label: {
-                            filaAdministracion(icono: "building.2.fill",
-                                               color: Tema.dorado,
-                                               titulo: "Sedes y fotos",
-                                               subtitulo: "Gestiona fotos y datos de cada sede")
+                            filaAdministracion
                         }
                         .buttonStyle(EstiloPresionable())
                         .accessibilityLabel("Sedes y fotos. Gestiona fotos y datos de cada sede")
@@ -220,24 +206,23 @@ struct PerfilView: View {
         }
     }
 
-    /// Fila grande tipo tarjeta para cada destino de administración.
-    private func filaAdministracion(icono: String, color: Color,
-                                    titulo: String, subtitulo: String) -> some View {
+    /// Fila grande tipo tarjeta para el único destino de administración.
+    private var filaAdministracion: some View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: Tema.radioPequeno, style: .continuous)
-                .fill(color.opacity(0.15))
+                .fill(Tema.dorado.opacity(0.15))
                 .frame(width: 46, height: 46)
                 .overlay(
-                    Image(systemName: icono)
+                    Image(systemName: "building.2.fill")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(color))
+                        .foregroundStyle(Tema.dorado))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(titulo)
+                Text("Sedes y fotos")
                     .font(.headline)
                     .foregroundStyle(Tema.texto)
 
-                Text(subtitulo)
+                Text("Gestiona fotos y datos de cada sede")
                     .font(.caption)
                     .foregroundStyle(Tema.textoSecundario)
                     .fixedSize(horizontal: false, vertical: true)

@@ -61,29 +61,18 @@ struct TareasView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(filtros, id: \.self) { f in
-                    let activo = filtro == f
                     Button {
-                        // Tocar el filtro ya activo no recarga.
-                        guard !activo else { return }
                         filtro = f
                         Task { await cargar() }
                     } label: {
                         Text(etiquetaFiltro(f))
-                            .font(.subheadline.weight(.semibold))
-                            .lineLimit(1)
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 40)
-                            .background(activo ? Tema.azul : Tema.superficie)
-                            .foregroundStyle(activo ? Color.white : Tema.texto)
+                            .font(.system(size: 12, weight: .semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(filtro == f ? Tema.azul : Tema.superficie)
+                            .foregroundStyle(filtro == f ? .white : Tema.texto)
                             .clipShape(Capsule())
-                            .overlay(
-                                Capsule().stroke(activo ? Color.clear : Tema.borde,
-                                                 lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
-                    .animation(.snappy(duration: 0.2), value: activo)
-                    .accessibilityAddTraits(activo ? AccessibilityTraits.isSelected
-                                                   : AccessibilityTraits())
                 }
             }
         }
@@ -92,23 +81,18 @@ struct TareasView: View {
     private func tarjeta(_ t: TareaLimpieza) -> some View {
         let estado = Etiquetas.estadoTarea(t.estado)
 
-        return HStack(spacing: 0) {
-            Rectangle()
-                .fill(t.urgente ? Tema.peligro : estado.color)
-                .frame(width: 4)
-
+        return Tarjeta {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Habitación \(t.habitacionNumero)")
-                            .font(.headline)
-                            .foregroundStyle(Tema.texto)
-                        Text(t.tipo.capitalized)
-                            .font(.caption)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(t.tipo)
+                            .font(.system(size: 10))
                             .foregroundStyle(Tema.textoSecundario)
                     }
 
-                    Spacer(minLength: 0)
+                    Spacer()
 
                     if t.urgente {
                         EtiquetaEstado(texto: "Urgente", color: Tema.peligro,
@@ -118,34 +102,23 @@ struct TareasView: View {
                     }
                 }
 
-                if t.inicioEn != nil || t.finEn != nil {
-                    HStack(spacing: 12) {
-                        if let inicio = t.inicioEn {
-                            Label(FechaAPI.formatearConHora(FechaAPI.parsear(inicio)),
-                                  systemImage: "clock")
-                                .font(.caption2)
-                                .foregroundStyle(Tema.textoSecundario)
-                        }
-                        if let fin = t.finEn {
-                            Label(FechaAPI.formatearConHora(FechaAPI.parsear(fin)),
-                                  systemImage: "checkmark.circle")
-                                .font(.caption2)
-                                .foregroundStyle(Tema.textoSecundario)
-                        }
-                    }
+                if let inicio = t.inicioEn {
+                    Label("Inicio: \(FechaAPI.formatearConHora(FechaAPI.parsear(inicio)))",
+                          systemImage: "clock")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Tema.textoSecundario)
+                }
+
+                if let fin = t.finEn {
+                    Label("Fin: \(FechaAPI.formatearConHora(FechaAPI.parsear(fin)))",
+                          systemImage: "checkmark.circle")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Tema.textoSecundario)
                 }
 
                 acciones(t)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Tema.superficie)
-        .clipShape(RoundedRectangle(cornerRadius: Tema.radio, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tema.radio, style: .continuous)
-                .stroke(Tema.borde, lineWidth: 1))
-        .shadow(color: Tema.colorSombra, radius: 12, x: 0, y: 4)
     }
 
     @ViewBuilder
@@ -161,14 +134,14 @@ struct TareasView: View {
             if sesion.esAdmin || sesion.esGerente {
                 boton("Verificar y liberar", "checkmark.seal.fill", t, "VERIFICADA")
             } else {
-                Label("Pendiente del supervisor", systemImage: "hourglass")
-                    .font(.caption)
+                Text("Pendiente de verificación del supervisor")
+                    .font(.system(size: 10))
                     .foregroundStyle(Tema.textoSecundario)
             }
 
         default:
             Label("Verificada", systemImage: "checkmark.seal.fill")
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 10))
                 .foregroundStyle(Tema.exito)
         }
     }
@@ -178,26 +151,22 @@ struct TareasView: View {
         Button {
             Task { await avanzar(tarea, nuevoEstado) }
         } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: 6) {
                 if procesando == tarea.id {
                     ProgressView().tint(.white).scaleEffect(0.8)
                 } else {
                     Image(systemName: icono)
-                        .font(.subheadline.weight(.semibold))
                 }
-                Text(procesando == tarea.id ? "Guardando..." : titulo)
-                    .font(.subheadline.weight(.semibold))
+                Text(titulo)
+                    .font(.system(size: 12, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 44)
-            .background(procesando == tarea.id ? Tema.azul.opacity(0.6) : Tema.azul)
+            .padding(.vertical, 10)
+            .background(Tema.azul)
             .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: Tema.radioPequeno,
-                                        style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 9))
         }
-        .buttonStyle(EstiloPresionable())
         .disabled(procesando != nil)
-        .accessibilityLabel(titulo)
     }
 
     private func etiquetaFiltro(_ valor: String) -> String {

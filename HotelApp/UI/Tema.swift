@@ -49,14 +49,6 @@ enum Tema {
     static let radioPequeno: CGFloat = 12
     /// Sombra suave común a tarjetas.
     static let colorSombra = Color.black.opacity(0.06)
-    /// Sombra de elevación algo más marcada (tarjetas destacadas).
-    static let sombra = Color.black.opacity(0.10)
-
-    /// Degradado de marca (azul profundo → azul oscuro), para cabeceras
-    /// y botones con relieve.
-    static let degradadoMarca = LinearGradient(colors: [azul, azulOscuro],
-                                               startPoint: .topLeading,
-                                               endPoint: .bottomTrailing)
 
     static func soles(_ valor: Decimal) -> String {
         let formatter = NumberFormatter()
